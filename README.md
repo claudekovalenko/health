@@ -11,6 +11,10 @@ data lives in your browser's local storage and nowhere else.
 
 Open `index.html` in a browser. That's it.
 
+There's also a hosted copy published as a Claude Artifact, built from these same
+files — that one keeps your data on your Claude account so it follows you
+between phone and laptop.
+
 If you want it to behave like a real app (and to be safe about storage in every
 browser), serve it instead:
 
@@ -55,10 +59,17 @@ week's, so you can tell whether the work is doing anything.
 | `index.html` | Page shell and tabs |
 | `styles.css` | All styling, light and dark |
 | `app.js` | Data model, scoring, rendering |
+| `tools/build-artifact.js` | Bundles the three into one file for publishing |
+| `dist/artifact.html` | That bundle — republish it to update the hosted copy |
+
+Rebuild the bundle with `node tools/build-artifact.js` after any change.
 
 ## Your data
 
-Everything is under the `growth-rings-v1` key in local storage. **Areas →
+Everything is under the `growth-rings-v1` key in local storage. The hosted copy
+also mirrors it to a single document on your Claude account, so an edit on your
+phone shows up on your laptop; last write wins. That copy is private to you
+unless you share the artifact link, and health notes are worth keeping unshared. **Areas →
 Export backup** writes a JSON file; **Import backup** reads one back. Do that
 before clearing site data or moving to a new phone.
 
