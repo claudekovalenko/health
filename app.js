@@ -224,6 +224,10 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  function shortName(name) {
+    return String(name).split(' — ')[0].split(' - ')[0].trim() || name;
+  }
+
   function pct(x) { return Math.round(x * 100); }
 
   function ring(value, size, stroke, color) {
@@ -271,6 +275,25 @@
       '<span class="pill' + (streak() > 0 ? ' good' : '') + '">' + streak() + '-day streak</span>' +
       '</div></div></div></div>'
     );
+
+    // Every area's ring, side by side, so the whole picture reads before you
+    // scroll into any single one. Tap a ring to jump to that area.
+    if (S.areas.length) {
+      var summary = el('<div class="summary"></div>');
+      S.areas.forEach(function (area) {
+        var sc = areaScore(area, days);
+        var b = el('<button class="sum" type="button" title="' + esc(area.name) + ' — ' + pct(sc) + '% this week">' +
+          ring(sc, 52, 6, esc(area.color)) +
+          '<span class="sum-name">' + esc(area.emoji) + ' ' + esc(shortName(area.name)) + '</span></button>');
+        b.addEventListener('click', function () {
+          var card = document.getElementById('area-' + area.id);
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        summary.appendChild(b);
+      });
+      hero.appendChild(summary);
+    }
+
     root.appendChild(hero);
 
     if (!S.areas.length) {
@@ -280,7 +303,7 @@
 
     S.areas.forEach(function (area) {
       var score = areaScore(area, days);
-      var card = el('<div class="card area" style="border-left-color:' + esc(area.color) + '"></div>');
+      var card = el('<div class="card area" id="area-' + esc(area.id) + '" style="border-left-color:' + esc(area.color) + '"></div>');
 
       card.appendChild(el(
         '<div class="area-top">' + ring(score, 62, 8, esc(area.color)) +

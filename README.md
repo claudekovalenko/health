@@ -36,6 +36,10 @@ or anything else.
 aiming for) and a coin value (how much it's worth to you). Tap to check one off
 for today.
 
+The **Today** tab opens with a summary: the overall ring, then every area's ring
+side by side, so the whole picture reads before you scroll. Tap one to jump to
+that area.
+
 **Rings** show rolling 7-day consistency, not "did you do everything today".
 For each habit the ring asks: of your weekly target, how much did you hit? Those
 are averaged, weighted by how much each habit is worth. Miss a day and the ring

@@ -122,6 +122,27 @@ h3.section { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; 
 .pill.good { color: var(--good); border-color: rgba(79,210,139,.35); }
 .pill.gold { color: var(--gold); border-color: rgba(242,193,78,.35); }
 
+/* ---------- summary strip ---------- */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
+  gap: 10px 4px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.sum {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: none; border: 0; padding: 4px 2px; border-radius: 12px;
+  color: inherit; font: inherit; cursor: pointer;
+}
+.sum:hover { background: var(--card-2); }
+.sum-name {
+  font-size: 11px; color: var(--ink-2); text-align: center;
+  line-height: 1.25; max-width: 84px;
+}
+.summary .pct { font-size: 12.5px; }
+
 /* ---------- rings ---------- */
 .ring-wrap { position: relative; flex: none; }
 .ring-wrap .ring-label {
