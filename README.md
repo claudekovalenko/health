@@ -7,13 +7,16 @@ are actually getting better.
 Built as plain HTML/CSS/JS. No build step, no accounts, no network calls. Your
 data lives in your browser's local storage and nowhere else.
 
+**Live at https://claudekovalenko.github.io/health/** — served from this branch
+by GitHub Pages on every push.
+
 ## Run it
 
-Open `index.html` in a browser. That's it.
+Open the link above, or open `index.html` locally in a browser. That's it.
 
-There's also a hosted copy published as a Claude Artifact, built from these same
-files — that one keeps your data on your Claude account so it follows you
-between phone and laptop.
+The Pages copy keeps your data in that browser's local storage. There's also a
+copy published as a Claude Artifact, built from these same files, which keeps
+your data on your Claude account so it follows you between phone and laptop.
 
 If you want it to behave like a real app (and to be safe about storage in every
 browser), serve it instead:
