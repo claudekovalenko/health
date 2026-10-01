@@ -54,10 +54,20 @@ effort banked, and on the Invest tab you spend them on real things that push an
 area forward — new earplugs, a PT session, a dental visit. The same tab points
 at whichever area is lagging, since that's where one extra rep buys the most.
 
-**The 0–10 rating** under each area is the other half of the picture: habits are
-the input, the rating is the output. Tinnitus loudness, knee confidence,
-shoulder tightness. The Progress tab puts this week's average against last
-week's, so you can tell whether the work is doing anything.
+**The 0–10 ratings** under each area are the other half of the picture: habits
+are the input, the ratings are the output. Tinnitus loudness, knee confidence,
+knee crunching, shoulder tightness. An area can carry as many as you want. The
+Progress tab puts this week's average against last week's, so you can tell
+whether the work is doing anything.
+
+**Day tags** record what a day was like — "loud place", "ear protection with
+me", "on my feet all day" — tapped on the Today tab. Mark a tag as an
+*exposure* (something you were subjected to) or a *protection* (something you
+did about it), and the Progress tab's "Does the day change it?" card compares
+your ratings across them: how much louder the tinnitus runs on loud days, and
+whether having ear protection with you changes that on those same days. It uses
+your whole history, not just the last fortnight, and says how many days each
+side of a comparison stands on so you can tell a signal from a coincidence.
 
 ## Files
 

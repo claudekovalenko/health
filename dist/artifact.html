@@ -181,6 +181,32 @@ circle.ring-bar { transition: stroke-dashoffset .5s cubic-bezier(.22,.9,.3,1); }
 .act-meta { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .act-meta b { color: var(--gold); font-weight: 650; }
 
+/* ---------- day tags ---------- */
+.flags {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);
+}
+.flag {
+  font: inherit; font-size: 12px; line-height: 1.2;
+  padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  background: transparent; border: 1px solid var(--line); color: var(--ink-3);
+  transition: color .15s ease, background .15s ease;
+}
+.flag:hover { color: var(--ink-2); }
+.flag.on { background: var(--card-2); color: var(--ink); font-weight: 600; }
+.flag.on::before { content: "✓ "; }
+
+.dot-lg { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+
+.subblock {
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px; margin-bottom: 10px; background: var(--bg-2);
+}
+.subblock .field { margin-bottom: 8px; }
+select.f-kind {
+  width: auto; flex: none; font-size: 12.5px; padding: 8px 10px;
+}
+
 /* ---------- metric slider ---------- */
 .metric { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
 .metric-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
@@ -310,9 +336,16 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
         {
           id: 'ear', name: 'Ear — pulsatile tinnitus', emoji: '👂', color: '#7fd4e8',
           note: 'Unilateral. Earplugs have been the thing that helps most so far.',
-          metric: { label: 'Tinnitus loudness', low: 'quiet', high: 'loud', lowerIsBetter: true },
+          metrics: [
+            { id: 'ear', label: 'Tinnitus loudness', low: 'quiet', high: 'loud', lowerIsBetter: true }
+          ],
+          flags: [
+            { id: 'ear-loud', label: 'Loud place (park, concert, bar)', kind: 'exposure' },
+            { id: 'ear-plugs', label: 'Ear protection with me', kind: 'protection' }
+          ],
           actions: [
             { id: 'ear1', label: 'Earplugs in loud environments', coins: 3, target: 7 },
+            { id: 'ear4', label: 'Earplugs packed before heading out', coins: 2, target: 7 },
             { id: 'ear2', label: 'Quiet wind-down before bed', coins: 2, target: 5 },
             { id: 'ear3', label: 'Note episodes + what triggered them', coins: 1, target: 7 }
           ]
@@ -320,8 +353,15 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
         {
           id: 'knee', name: 'Right knee — ACL', emoji: '🦵', color: '#31d0aa',
           note: 'Torn, then healed. Goal: strong enough to trust in sport again.',
-          metric: { label: 'Knee confidence', low: 'shaky', high: 'solid', lowerIsBetter: false },
+          metrics: [
+            { id: 'knee', label: 'Knee confidence', low: 'shaky', high: 'solid', lowerIsBetter: false },
+            { id: 'knee-crunch', label: 'Knee crunching / grinding', low: 'silent', high: 'loud', lowerIsBetter: true }
+          ],
+          flags: [
+            { id: 'knee-walk', label: 'On my feet all day', kind: 'exposure' }
+          ],
           actions: [
+            { id: 'knee5', label: 'Squats (bodyweight or loaded)', coins: 4, target: 3 },
             { id: 'knee1', label: 'Quad + hamstring strength set', coins: 4, target: 4 },
             { id: 'knee2', label: 'Single-leg balance & control', coins: 3, target: 3 },
             { id: 'knee3', label: 'Mobility / warm-up before activity', coins: 2, target: 5 },
@@ -331,7 +371,10 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
         {
           id: 'shoulder', name: 'Shoulder — tightness', emoji: '🫱', color: '#7aa2f7',
           note: 'Still figuring out the cause. Track what loosens it.',
-          metric: { label: 'Shoulder tightness', low: 'loose', high: 'tight', lowerIsBetter: true },
+          metrics: [
+            { id: 'shoulder', label: 'Shoulder tightness', low: 'loose', high: 'tight', lowerIsBetter: true }
+          ],
+          flags: [],
           actions: [
             { id: 'sh1', label: 'Shoulder mobility / stretch routine', coins: 3, target: 5 },
             { id: 'sh2', label: 'Posture reset breaks during the day', coins: 1, target: 5 },
@@ -341,7 +384,10 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
         {
           id: 'teeth', name: 'Teeth', emoji: '🦷', color: '#e08bb0',
           note: '',
-          metric: { label: 'Mouth comfort', low: 'sore', high: 'great', lowerIsBetter: false },
+          metrics: [
+            { id: 'teeth', label: 'Mouth comfort', low: 'sore', high: 'great', lowerIsBetter: false }
+          ],
+          flags: [],
           actions: [
             { id: 'th1', label: 'Brush morning + night', coins: 2, target: 7 },
             { id: 'th2', label: 'Floss', coins: 2, target: 7 },
@@ -356,12 +402,79 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
         { id: 'i4', name: 'Dental visit or night guard', cost: 500, areaId: 'teeth', done: false }
       ],
       log: {},        // 'YYYY-MM-DD' -> { actionId: true }
-      metrics: {},    // 'YYYY-MM-DD' -> { areaId: 0..10 }
+      metrics: {},    // 'YYYY-MM-DD' -> { metricId: 0..10 }
+      flags: {},      // 'YYYY-MM-DD' -> { flagId: true }  (what the day was like)
+      applied: [],    // ids of one-time upgrades already folded into this data
       notes: {},      // 'YYYY-MM-DD' -> string
       archive: {},    // actionId -> { coins } for deleted actions, so past coins survive
       spent: 0,
       view: 'today'
     };
+  }
+
+
+  /* ------------------------------------------------------- shape + upgrades */
+
+  /* Data written by an older version is brought forward here rather than being
+     thrown away. Upgrades add new habits, ratings and day tags to areas you
+     already have — once each, so anything you delete afterwards stays deleted. */
+
+  var UPGRADES = [
+    {
+      id: 'exposure-tags-and-crunch',
+      apply: function (st) {
+        var ear = areaById(st, 'ear');
+        if (ear) {
+          addFlag(ear, { id: 'ear-loud', label: 'Loud place (park, concert, bar)', kind: 'exposure' });
+          addFlag(ear, { id: 'ear-plugs', label: 'Ear protection with me', kind: 'protection' });
+          addAction(ear, { id: 'ear4', label: 'Earplugs packed before heading out', coins: 2, target: 7 }, 1);
+        }
+        var knee = areaById(st, 'knee');
+        if (knee) {
+          addMetric(knee, { id: 'knee-crunch', label: 'Knee crunching / grinding', low: 'silent', high: 'loud', lowerIsBetter: true });
+          addAction(knee, { id: 'knee5', label: 'Squats (bodyweight or loaded)', coins: 4, target: 3 }, 0);
+          addFlag(knee, { id: 'knee-walk', label: 'On my feet all day', kind: 'exposure' });
+        }
+      }
+    }
+  ];
+
+  function areaById(st, id) {
+    return st.areas.filter(function (a) { return a.id === id; })[0];
+  }
+  function hasId(list, id) {
+    return list.some(function (x) { return x.id === id; });
+  }
+  function addFlag(area, flag) { if (!hasId(area.flags, flag.id)) area.flags.push(flag); }
+  function addMetric(area, m) { if (!hasId(area.metrics, m.id)) area.metrics.push(m); }
+  function addAction(area, act, at) {
+    if (hasId(area.actions, act.id)) return;
+    area.actions.splice(typeof at === 'number' ? at : area.actions.length, 0, act);
+  }
+
+  function migrate(st) {
+    if (!st.flags) st.flags = {};
+    if (!st.applied) st.applied = [];
+    if (!st.archive) st.archive = {};
+
+    (st.areas || []).forEach(function (a) {
+      // one rating per area became a list of them; the first keeps the area's
+      // id as its key so every rating recorded so far still lines up
+      if (!a.metrics) {
+        a.metrics = (a.metric && a.metric.label)
+          ? [{ id: a.id, label: a.metric.label, low: a.metric.low, high: a.metric.high, lowerIsBetter: !!a.metric.lowerIsBetter }]
+          : [];
+      }
+      delete a.metric;
+      if (!a.flags) a.flags = [];
+    });
+
+    UPGRADES.forEach(function (u) {
+      if (st.applied.indexOf(u.id) >= 0) return;
+      try { u.apply(st); } catch (e) { /* an upgrade must never cost you your data */ }
+      st.applied.push(u.id);
+    });
+    return st;
   }
 
   /* ------------------------------------------------------------------- state */
@@ -371,13 +484,13 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
   function load() {
     try {
       var raw = localStorage.getItem(KEY);
-      if (!raw) return seed();
+      if (!raw) return migrate(seed());
       var parsed = JSON.parse(raw);
       var base = seed();
       Object.keys(base).forEach(function (k) { if (!(k in parsed)) parsed[k] = base[k]; });
-      return parsed;
+      return migrate(parsed);
     } catch (e) {
-      return seed();
+      return migrate(seed());
     }
   }
 
@@ -432,6 +545,14 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
     return S.archive[actionId] ? S.archive[actionId].coins : 0;
   }
   function isDone(dayKey, actionId) { return !!(S.log[dayKey] && S.log[dayKey][actionId]); }
+  function flagOn(dayKey, flagId) { return !!(S.flags[dayKey] && S.flags[dayKey][flagId]); }
+  function toggleFlag(dayKey, flagId) {
+    if (!S.flags[dayKey]) S.flags[dayKey] = {};
+    if (S.flags[dayKey][flagId]) delete S.flags[dayKey][flagId];
+    else S.flags[dayKey][flagId] = true;
+    save();
+    return flagOn(dayKey, flagId);
+  }
   function hits(actionId, days) {
     return days.filter(function (d) { return isDone(d, actionId); }).length;
   }
@@ -498,6 +619,19 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
       if (any) n++; else break;
     }
     return n;
+  }
+
+  // average of a rating across every day that matches a test, with the sample
+  // size, so a comparison can say how much it is standing on
+  function ratingAvg(metricId, pred) {
+    var vals = [];
+    Object.keys(S.metrics).forEach(function (d) {
+      var v = S.metrics[d][metricId];
+      if (typeof v === 'number' && pred(d)) vals.push(v);
+    });
+    if (!vals.length) return null;
+    var sum = vals.reduce(function (a, b) { return a + b; }, 0);
+    return { avg: sum / vals.length, n: vals.length };
   }
 
   function metricAvg(areaId, days) {
@@ -624,24 +758,43 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
       if (!area.actions.length) list.appendChild(el('<li><p class="empty">No habits here yet — add some in Areas.</p></li>'));
       card.appendChild(list);
 
-      if (area.metric && area.metric.label) {
-        var cur = (S.metrics[t] || {})[area.id];
+      // what the day was like — the context a rating needs to mean anything
+      if (area.flags.length) {
+        var chips = el('<div class="flags"></div>');
+        area.flags.forEach(function (flag) {
+          var on = flagOn(t, flag.id);
+          var chip = el('<button class="flag' + (on ? ' on' : '') + '" type="button">' +
+            esc(flag.label) + '</button>');
+          if (on) chip.style.borderColor = area.color;
+          chip.addEventListener('click', function () {
+            var nowOn = toggleFlag(t, flag.id);
+            chip.classList.toggle('on', nowOn);
+            chip.style.borderColor = nowOn ? area.color : '';
+          });
+          chips.appendChild(chip);
+        });
+        card.appendChild(chips);
+      }
+
+      area.metrics.forEach(function (metric) {
+        if (!metric.label) return;
+        var cur = (S.metrics[t] || {})[metric.id];
         var m = el(
           '<div class="metric">' +
-          '<div class="metric-head"><span>' + esc(area.metric.label) + ' today</span>' +
+          '<div class="metric-head"><span>' + esc(metric.label) + ' today</span>' +
           '<b>' + (typeof cur === 'number' ? cur + '/10' : 'not set') + '</b></div>' +
           '<input type="range" min="0" max="10" step="1" value="' + (typeof cur === 'number' ? cur : 5) + '">' +
-          '<div class="metric-head" style="margin:4px 0 0"><span>' + esc(area.metric.low || '0') + '</span><span>' + esc(area.metric.high || '10') + '</span></div>' +
+          '<div class="metric-head" style="margin:4px 0 0"><span>' + esc(metric.low || '0') + '</span><span>' + esc(metric.high || '10') + '</span></div>' +
           '</div>'
         );
         m.querySelector('input').addEventListener('input', function (e) {
           if (!S.metrics[t]) S.metrics[t] = {};
-          S.metrics[t][area.id] = +e.target.value;
+          S.metrics[t][metric.id] = +e.target.value;
           m.querySelector('.metric-head b').textContent = e.target.value + '/10';
           save();
         });
         card.appendChild(m);
-      }
+      });
 
       root.appendChild(card);
     });
@@ -704,21 +857,26 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
     if (!S.areas.length) tr.appendChild(el('<p class="empty">Nothing to compare yet.</p>'));
     root.appendChild(tr);
 
-    var withMetric = S.areas.filter(function (a) { return a.metric && a.metric.label; });
-    if (withMetric.length) {
+    var rated = [];
+    S.areas.forEach(function (a) {
+      a.metrics.forEach(function (m) { if (m.label) rated.push({ area: a, metric: m }); });
+    });
+
+    if (rated.length) {
       var mc = el('<div class="card"><div class="card-head"><div><h2>How it has felt</h2>' +
         '<p class="sub">Your daily ratings, last 14 days.</p></div></div></div>');
-      withMetric.forEach(function (a) {
-        var vals = d14.map(function (k) { return (S.metrics[k] || {})[a.id]; });
+      rated.forEach(function (r) {
+        var a = r.area, m = r.metric;
+        var vals = d14.map(function (k) { return (S.metrics[k] || {})[m.id]; });
         var known = vals.filter(function (v) { return typeof v === 'number'; });
-        var nowAvg = metricAvg(a.id, days), prevAvg = metricAvg(a.id, prev);
+        var nowAvg = metricAvg(m.id, days), prevAvg = metricAvg(m.id, prev);
         var desc = 'no ratings yet', cls = 'flat', label = '—';
         if (nowAvg != null) {
           label = nowAvg.toFixed(1);
           desc = '7-day average out of 10';
           if (prevAvg != null) {
             var diff = nowAvg - prevAvg;
-            var better = a.metric.lowerIsBetter ? diff < 0 : diff > 0;
+            var better = m.lowerIsBetter ? diff < 0 : diff > 0;
             desc = prevAvg.toFixed(1) + ' → ' + nowAvg.toFixed(1) + (Math.abs(diff) < 0.2 ? ' · steady' : (better ? ' · better' : ' · worse'));
             cls = Math.abs(diff) < 0.2 ? 'flat' : (better ? 'up' : 'down');
           }
@@ -727,12 +885,75 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
         var filled = [], last = 5;
         vals.forEach(function (v) { if (typeof v === 'number') last = v; filled.push(last); });
         mc.appendChild(el(
-          '<div class="trend"><div style="flex:none">' + (known.length ? sparkline(filled, esc(a.color), a.metric.lowerIsBetter) : '<div style="width:120px"></div>') + '</div>' +
-          '<div class="grow"><div class="name">' + esc(a.metric.label) + '</div><div class="desc">' + esc(desc) + '</div></div>' +
+          '<div class="trend"><div style="flex:none">' + (known.length ? sparkline(filled, esc(a.color), m.lowerIsBetter) : '<div style="width:120px"></div>') + '</div>' +
+          '<div class="grow"><div class="name">' + esc(m.label) + '</div><div class="desc">' + esc(desc) + '</div></div>' +
           '<div class="delta ' + cls + '">' + label + '</div></div>'
         ));
       });
       root.appendChild(mc);
+    }
+
+    // Days you tagged against days you didn't — the question behind the tags is
+    // "does this kind of day cost me?", and this is the only part of the app
+    // that can answer it. Uses all history, not just the last fortnight.
+    var patterns = [];
+    S.areas.forEach(function (area) {
+      var exposures = area.flags.filter(function (f) { return f.kind === 'exposure'; });
+      var guards = area.flags.filter(function (f) { return f.kind === 'protection'; });
+
+      area.metrics.forEach(function (m) {
+        if (!m.label) return;
+
+        exposures.forEach(function (f) {
+          var on = ratingAvg(m.id, function (d) { return flagOn(d, f.id); });
+          var off = ratingAvg(m.id, function (d) { return !flagOn(d, f.id); });
+          patterns.push({
+            area: area, metric: m,
+            name: f.label,
+            on: on, off: off,
+            onWord: 'on those days', offWord: 'otherwise'
+          });
+
+          // and, on those days specifically, did the protection help?
+          guards.forEach(function (g) {
+            var guarded = ratingAvg(m.id, function (d) { return flagOn(d, f.id) && flagOn(d, g.id); });
+            var bare = ratingAvg(m.id, function (d) { return flagOn(d, f.id) && !flagOn(d, g.id); });
+            patterns.push({
+              area: area, metric: m,
+              name: g.label + ' · ' + f.label.toLowerCase(),
+              on: guarded, off: bare,
+              onWord: 'with', offWord: 'without'
+            });
+          });
+        });
+      });
+    });
+
+    if (patterns.length) {
+      var pc = el('<div class="card"><div class="card-head"><div><h2>Does the day change it?</h2>' +
+        '<p class="sub">Your ratings on days you tagged, against days you didn\'t.</p></div></div></div>');
+      patterns.forEach(function (p) {
+        var enough = p.on && p.off && p.on.n >= 2 && p.off.n >= 2;
+        var desc, cls = 'flat', label = '—';
+        if (!enough) {
+          var have = (p.on ? p.on.n : 0) + ' / ' + (p.off ? p.off.n : 0);
+          desc = p.metric.label.toLowerCase() + ' · needs a few more rated days (' + have + ')';
+        } else {
+          var diff = p.on.avg - p.off.avg;
+          var better = p.metric.lowerIsBetter ? diff < 0 : diff > 0;
+          label = (diff > 0 ? '+' : '') + diff.toFixed(1);
+          cls = Math.abs(diff) < 0.4 ? 'flat' : (better ? 'up' : 'down');
+          desc = p.metric.label.toLowerCase() + ' ' + p.on.avg.toFixed(1) + ' ' + p.onWord +
+            ' (' + p.on.n + ' days) vs ' + p.off.avg.toFixed(1) + ' ' + p.offWord + ' (' + p.off.n + ')';
+        }
+        pc.appendChild(el(
+          '<div class="trend"><span class="dot-lg" style="background:' + esc(p.area.color) + '"></span>' +
+          '<div class="grow"><div class="name">' + esc(p.name) + '</div>' +
+          '<div class="desc">' + esc(desc) + '</div></div>' +
+          '<div class="delta ' + cls + '">' + label + '</div></div>'
+        ));
+      });
+      root.appendChild(pc);
     }
 
     var recent = lastDays(7).slice().reverse().filter(function (k) { return (S.notes[k] || '').trim(); });
@@ -902,18 +1123,72 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
       });
       card.appendChild(add);
 
-      var m = area.metric || (area.metric = { label: '', low: '', high: '', lowerIsBetter: false });
       var met = el('<div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">' +
-        '<h3 class="section" style="margin-top:0">Daily 0–10 rating (optional)</h3>' +
-        '<label class="field"><span>What are you rating?</span><input type="text" class="m-label" value="' + esc(m.label) + '" placeholder="e.g. tinnitus loudness"></label>' +
-        '<div class="grid2"><label class="field"><span>0 means…</span><input type="text" class="m-low" value="' + esc(m.low || '') + '"></label>' +
-        '<label class="field"><span>10 means…</span><input type="text" class="m-high" value="' + esc(m.high || '') + '"></label></div>' +
-        '<label class="chk"><input type="checkbox" class="m-lower"' + (m.lowerIsBetter ? ' checked' : '') + '> Lower is better</label></div>');
-      met.querySelector('.m-label').addEventListener('change', function (e) { m.label = e.target.value; save(); render(); });
-      met.querySelector('.m-low').addEventListener('change', function (e) { m.low = e.target.value; save(); });
-      met.querySelector('.m-high').addEventListener('change', function (e) { m.high = e.target.value; save(); });
-      met.querySelector('.m-lower').addEventListener('change', function (e) { m.lowerIsBetter = e.target.checked; save(); });
+        '<h3 class="section" style="margin-top:0">Daily 0–10 ratings</h3></div>');
+      area.metrics.forEach(function (m) {
+        var block = el('<div class="subblock">' +
+          '<div class="row" style="margin-bottom:8px">' +
+          '<input type="text" class="grow m-label" value="' + esc(m.label) + '" placeholder="e.g. tinnitus loudness">' +
+          '<button class="btn ghost m-del" title="remove rating">✕</button></div>' +
+          '<div class="grid2"><label class="field"><span>0 means…</span><input type="text" class="m-low" value="' + esc(m.low || '') + '"></label>' +
+          '<label class="field"><span>10 means…</span><input type="text" class="m-high" value="' + esc(m.high || '') + '"></label></div>' +
+          '<label class="chk"><input type="checkbox" class="m-lower"' + (m.lowerIsBetter ? ' checked' : '') + '> Lower is better</label></div>');
+        block.querySelector('.m-label').addEventListener('change', function (e) { m.label = e.target.value; save(); render(); });
+        block.querySelector('.m-low').addEventListener('change', function (e) { m.low = e.target.value; save(); });
+        block.querySelector('.m-high').addEventListener('change', function (e) { m.high = e.target.value; save(); });
+        block.querySelector('.m-lower').addEventListener('change', function (e) { m.lowerIsBetter = e.target.checked; save(); });
+        block.querySelector('.m-del').addEventListener('click', function () {
+          if (!confirm('Remove the "' + (m.label || 'untitled') + '" rating? Past ratings stay in your history.')) return;
+          area.metrics = area.metrics.filter(function (x) { return x.id !== m.id; });
+          save(); render();
+        });
+        met.appendChild(block);
+      });
+      var addMet = el('<div class="row" style="margin-top:10px">' +
+        '<input type="text" class="grow nm-label" placeholder="add a rating…">' +
+        '<button class="btn">Add</button></div>');
+      addMet.querySelector('button').addEventListener('click', function () {
+        var v = addMet.querySelector('.nm-label').value.trim();
+        if (!v) return;
+        area.metrics.push({ id: uid(), label: v, low: '', high: '', lowerIsBetter: false });
+        save(); render();
+      });
+      met.appendChild(addMet);
       card.appendChild(met);
+
+      var tagEd = el('<div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">' +
+        '<h3 class="section" style="margin-top:0">Day tags</h3>' +
+        '<p class="muted" style="margin:-4px 0 10px">What a day was like, tapped on the Today tab. Mark a tag as ' +
+        'something you were exposed to, or something that protected you, and Progress compares your ratings across them.</p></div>');
+      area.flags.forEach(function (flag) {
+        var row = el('<div class="row" style="margin-bottom:8px">' +
+          '<input type="text" class="grow f-label" value="' + esc(flag.label) + '">' +
+          '<select class="f-kind">' +
+          '<option value="">plain</option>' +
+          '<option value="exposure"' + (flag.kind === 'exposure' ? ' selected' : '') + '>exposure</option>' +
+          '<option value="protection"' + (flag.kind === 'protection' ? ' selected' : '') + '>protection</option>' +
+          '</select>' +
+          '<button class="btn ghost f-del" title="remove tag">✕</button></div>');
+        row.querySelector('.f-label').addEventListener('change', function (e) { flag.label = e.target.value; save(); });
+        row.querySelector('.f-kind').addEventListener('change', function (e) { flag.kind = e.target.value; save(); render(); });
+        row.querySelector('.f-del').addEventListener('click', function () {
+          if (!confirm('Remove the "' + flag.label + '" tag? Days you already tagged stay in your history.')) return;
+          area.flags = area.flags.filter(function (x) { return x.id !== flag.id; });
+          save(); render();
+        });
+        tagEd.appendChild(row);
+      });
+      var addFlagRow = el('<div class="row" style="margin-top:10px">' +
+        '<input type="text" class="grow nf-label" placeholder="add a day tag…">' +
+        '<button class="btn">Add</button></div>');
+      addFlagRow.querySelector('button').addEventListener('click', function () {
+        var v = addFlagRow.querySelector('.nf-label').value.trim();
+        if (!v) return;
+        area.flags.push({ id: uid(), label: v, kind: '' });
+        save(); render();
+      });
+      tagEd.appendChild(addFlagRow);
+      card.appendChild(tagEd);
 
       var tools = el('<div class="btnrow"></div>');
       if (idx > 0) {
@@ -947,7 +1222,8 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
       S.areas.push({
         id: uid(), name: name, emoji: newArea.querySelector('.na-emoji').value || '🌱',
         color: PALETTE[S.areas.length % PALETTE.length], note: '',
-        metric: { label: '', low: '', high: '', lowerIsBetter: false },
+        metrics: [],
+        flags: [],
         actions: []
       });
       save(); render();
@@ -988,6 +1264,7 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
           S = parsed;
           var base = seed();
           Object.keys(base).forEach(function (k) { if (!(k in S)) S[k] = base[k]; });
+          migrate(S);
           save(); render();
         } catch (e) { alert('Could not read that file: ' + e.message); }
       };
@@ -1048,7 +1325,7 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
       if (!incoming || !incoming.areas) return;
       var base = seed();
       Object.keys(base).forEach(function (k) { if (!(k in incoming)) incoming[k] = base[k]; });
-      S = incoming;
+      S = migrate(incoming);
       saveLocal();
       render();
       setSync('synced');
