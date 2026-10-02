@@ -355,13 +355,16 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
           note: 'Torn, then healed. Goal: strong enough to trust in sport again.',
           metrics: [
             { id: 'knee', label: 'Knee confidence', low: 'shaky', high: 'solid', lowerIsBetter: false },
-            { id: 'knee-crunch', label: 'Knee crunching / grinding', low: 'silent', high: 'loud', lowerIsBetter: true }
+            { id: 'knee-crunch', label: 'Knee crunching / grinding', low: 'silent', high: 'loud', lowerIsBetter: true },
+            { id: 'ham-sore', label: 'Hamstring soreness', low: 'easy', high: 'sore', lowerIsBetter: true }
           ],
           flags: [
-            { id: 'knee-walk', label: 'On my feet all day', kind: 'exposure' }
+            { id: 'knee-walk', label: 'On my feet all day', kind: 'exposure' },
+            { id: 'leg-heavy', label: 'Heavy leg day (squats, hills, sprint)', kind: 'exposure' }
           ],
           actions: [
             { id: 'knee5', label: 'Squats (bodyweight or loaded)', coins: 4, target: 3 },
+            { id: 'knee6', label: 'Ice the hamstring after loading', coins: 2, target: 3 },
             { id: 'knee1', label: 'Quad + hamstring strength set', coins: 4, target: 4 },
             { id: 'knee2', label: 'Single-leg balance & control', coins: 3, target: 3 },
             { id: 'knee3', label: 'Mobility / warm-up before activity', coins: 2, target: 5 },
@@ -435,6 +438,16 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
           addAction(knee, { id: 'knee5', label: 'Squats (bodyweight or loaded)', coins: 4, target: 3 }, 0);
           addFlag(knee, { id: 'knee-walk', label: 'On my feet all day', kind: 'exposure' });
         }
+      }
+    },
+    {
+      id: 'hamstring-load',
+      apply: function (st) {
+        var knee = areaById(st, 'knee');
+        if (!knee) return;
+        addMetric(knee, { id: 'ham-sore', label: 'Hamstring soreness', low: 'easy', high: 'sore', lowerIsBetter: true });
+        addFlag(knee, { id: 'leg-heavy', label: 'Heavy leg day (squats, hills, sprint)', kind: 'exposure' });
+        addAction(knee, { id: 'knee6', label: 'Ice the hamstring after loading', coins: 2, target: 3 }, 1);
       }
     }
   ];
@@ -928,6 +941,9 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
         });
       });
     });
+
+    // a tag you have never used has nothing to say yet
+    patterns = patterns.filter(function (p) { return p.on && p.on.n > 0; });
 
     if (patterns.length) {
       var pc = el('<div class="card"><div class="card-head"><div><h2>Does the day change it?</h2>' +
