@@ -74,6 +74,17 @@ whether having ear protection with you changes that on those same days. It uses
 your whole history, not just the last fortnight, and says how many days each
 side of a comparison stands on so you can tell a signal from a coincidence.
 
+**Take it to an appointment** on the Progress tab writes everything the tracker
+knows as plain text: each area's background and history, every rating with its
+7- and 30-day average and whether today stands out, what you actually did over
+the last fortnight, how many days carry each tag and when they last did, the
+tagged-vs-untagged comparisons, and your recent notes. Copy it or download it as
+a .txt. The point is to walk into an appointment with dates and numbers instead
+of an impression.
+
+**Background & history** lives per area, in the Areas tab. It stays off the
+Today tab so the daily view stays short, and goes into the appointment summary.
+
 ## Files
 
 | File | What's in it |

@@ -15,6 +15,7 @@
         {
           id: 'ear', name: 'Ear — pulsatile tinnitus', emoji: '👂', color: '#7fd4e8',
           note: 'Unilateral. Earplugs have been the thing that helps most so far.',
+          history: '',
           metrics: [
             { id: 'ear', label: 'Tinnitus loudness', low: 'quiet', high: 'loud', lowerIsBetter: true }
           ],
@@ -32,19 +33,24 @@
         {
           id: 'knee', name: 'Right knee — ACL', emoji: '🦵', color: '#31d0aa',
           note: 'Torn, then healed. Goal: strong enough to trust in sport again.',
+          history: '',
           metrics: [
             { id: 'knee', label: 'Knee confidence', low: 'shaky', high: 'solid', lowerIsBetter: false },
             { id: 'knee-crunch', label: 'Knee crunching / grinding', low: 'silent', high: 'loud', lowerIsBetter: true },
-            { id: 'ham-sore', label: 'Hamstring soreness', low: 'easy', high: 'sore', lowerIsBetter: true }
+            { id: 'ham-sore', label: 'Hamstring soreness', low: 'easy', high: 'sore', lowerIsBetter: true },
+            { id: 'ham-tingle', label: 'Tingling down the leg', low: 'none', high: 'constant', lowerIsBetter: true }
           ],
           flags: [
             { id: 'knee-walk', label: 'On my feet all day', kind: 'exposure' },
             { id: 'leg-heavy', label: 'Heavy leg day (squats, hills, sprint)', kind: 'exposure' },
-            { id: 'ham-curl', label: 'Hamstring curl machine', kind: 'exposure' }
+            { id: 'ham-curl', label: 'Hamstring curl machine', kind: 'exposure' },
+            { id: 'sit-long', label: 'Long sitting on a hard seat', kind: 'exposure' },
+            { id: 'ham-stretch', label: 'Deep hamstring stretching', kind: 'exposure' }
           ],
           actions: [
             { id: 'knee5', label: 'Squats (bodyweight or loaded)', coins: 4, target: 3 },
             { id: 'knee6', label: 'Ice the hamstring after loading', coins: 2, target: 3 },
+            { id: 'knee7', label: 'Trained without pushing into pain or tingling', coins: 2, target: 7 },
             { id: 'knee1', label: 'Quad + hamstring strength set', coins: 4, target: 4 },
             { id: 'knee2', label: 'Single-leg balance & control', coins: 3, target: 3 },
             { id: 'knee3', label: 'Mobility / warm-up before activity', coins: 2, target: 5 },
@@ -137,6 +143,36 @@
         if (!knee) return;
         addFlag(knee, { id: 'ham-curl', label: 'Hamstring curl machine', kind: 'exposure' });
       }
+    },
+    {
+      id: 'nerve-and-sitting',
+      apply: function (st) {
+        var knee = areaById(st, 'knee');
+        if (!knee) return;
+        addMetric(knee, { id: 'ham-tingle', label: 'Tingling down the leg', low: 'none', high: 'constant', lowerIsBetter: true });
+        addFlag(knee, { id: 'sit-long', label: 'Long sitting on a hard seat', kind: 'exposure' });
+        addFlag(knee, { id: 'ham-stretch', label: 'Deep hamstring stretching', kind: 'exposure' });
+        addAction(knee, { id: 'knee7', label: 'Trained without pushing into pain or tingling', coins: 2, target: 7 });
+        if (!knee.history) {
+          knee.history = [
+            'ACL injury and reconstruction in 2013, right knee. Hamstring graft used.',
+            '',
+            'Tingling in the right upper hamstring / glute, around the sit bone (ischial',
+            'tuberosity) where the proximal hamstring attaches. It can radiate down the back',
+            'of the leg into the foot, including the sole. Long-standing, not new.',
+            '',
+            'No significant weakness, no progressive numbness, no bladder or bowel changes.',
+            'Ice on the upper hamstring / sit bone area is relieving.',
+            '',
+            'Provoked recently by the hamstring curl machine — the upper hamstring became',
+            'particularly noticeable with contraction, and one contraction hurt.',
+            '',
+            'Asymmetry: lying down and lifting the leg, the left stays stable while the right',
+            'rotates slightly inward during the contraction, and the movement is felt around',
+            'the upper hamstring / sit bone on that side.'
+          ].join('\n');
+        }
+      }
     }
   ];
 
@@ -168,6 +204,7 @@
       }
       delete a.metric;
       if (!a.flags) a.flags = [];
+      if (typeof a.history !== 'string') a.history = '';
     });
 
     UPGRADES.forEach(function (u) {
@@ -206,7 +243,8 @@
   }
 
   function anchorSave(name, text) {
-    var blob = new Blob([text], { type: 'application/json' });
+    var type = /\.json$/.test(name) ? 'application/json' : 'text/plain';
+    var blob = new Blob([text], { type: type });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = name;
@@ -354,6 +392,55 @@
     if (worstSpan >= 7 && worstSpan >= bestSpan) return { text: 'worst in ' + worstSpan + ' days', cls: 'bad' };
     if (bestSpan >= 7) return { text: 'best in ' + bestSpan + ' days', cls: 'good' };
     return null;
+  }
+
+  /* Days you tagged against days you didn't — the question behind the tags is
+     "does this kind of day cost me?". Uses all history, not just a fortnight,
+     and a tag you have never used has nothing to say yet. */
+  function computePatterns() {
+    var out = [];
+    S.areas.forEach(function (area) {
+      var exposures = area.flags.filter(function (f) { return f.kind === 'exposure'; });
+      var guards = area.flags.filter(function (f) { return f.kind === 'protection'; });
+
+      area.metrics.forEach(function (m) {
+        if (!m.label) return;
+        exposures.forEach(function (f) {
+          out.push({
+            area: area, metric: m, name: f.label,
+            on: ratingAvg(m.id, function (d) { return flagOn(d, f.id); }),
+            off: ratingAvg(m.id, function (d) { return !flagOn(d, f.id); }),
+            onWord: 'on those days', offWord: 'otherwise'
+          });
+          // and, on those days specifically, did the protection help?
+          guards.forEach(function (g) {
+            out.push({
+              area: area, metric: m, name: g.label + ' · ' + f.label.toLowerCase(),
+              on: ratingAvg(m.id, function (d) { return flagOn(d, f.id) && flagOn(d, g.id); }),
+              off: ratingAvg(m.id, function (d) { return flagOn(d, f.id) && !flagOn(d, g.id); }),
+              onWord: 'with', offWord: 'without'
+            });
+          });
+        });
+      });
+    });
+    return out.filter(function (p) { return p.on && p.on.n > 0; });
+  }
+
+  function patternLine(p) {
+    if (!(p.on && p.off && p.on.n >= 2 && p.off.n >= 2)) {
+      return { enough: false, desc: p.metric.label.toLowerCase() + ' · needs a few more rated days (' +
+        (p.on ? p.on.n : 0) + ' / ' + (p.off ? p.off.n : 0) + ')', label: '—', cls: 'flat' };
+    }
+    var diff = p.on.avg - p.off.avg;
+    var better = p.metric.lowerIsBetter ? diff < 0 : diff > 0;
+    return {
+      enough: true,
+      desc: p.metric.label.toLowerCase() + ' ' + p.on.avg.toFixed(1) + ' ' + p.onWord +
+        ' (' + p.on.n + ' days) vs ' + p.off.avg.toFixed(1) + ' ' + p.offWord + ' (' + p.off.n + ')',
+      label: (diff > 0 ? '+' : '') + diff.toFixed(1),
+      cls: Math.abs(diff) < 0.4 ? 'flat' : (better ? 'up' : 'down')
+    };
   }
 
   function metricAvg(areaId, days) {
@@ -626,71 +713,45 @@
       root.appendChild(mc);
     }
 
-    // Days you tagged against days you didn't — the question behind the tags is
-    // "does this kind of day cost me?", and this is the only part of the app
-    // that can answer it. Uses all history, not just the last fortnight.
-    var patterns = [];
-    S.areas.forEach(function (area) {
-      var exposures = area.flags.filter(function (f) { return f.kind === 'exposure'; });
-      var guards = area.flags.filter(function (f) { return f.kind === 'protection'; });
-
-      area.metrics.forEach(function (m) {
-        if (!m.label) return;
-
-        exposures.forEach(function (f) {
-          var on = ratingAvg(m.id, function (d) { return flagOn(d, f.id); });
-          var off = ratingAvg(m.id, function (d) { return !flagOn(d, f.id); });
-          patterns.push({
-            area: area, metric: m,
-            name: f.label,
-            on: on, off: off,
-            onWord: 'on those days', offWord: 'otherwise'
-          });
-
-          // and, on those days specifically, did the protection help?
-          guards.forEach(function (g) {
-            var guarded = ratingAvg(m.id, function (d) { return flagOn(d, f.id) && flagOn(d, g.id); });
-            var bare = ratingAvg(m.id, function (d) { return flagOn(d, f.id) && !flagOn(d, g.id); });
-            patterns.push({
-              area: area, metric: m,
-              name: g.label + ' · ' + f.label.toLowerCase(),
-              on: guarded, off: bare,
-              onWord: 'with', offWord: 'without'
-            });
-          });
-        });
-      });
-    });
-
-    // a tag you have never used has nothing to say yet
-    patterns = patterns.filter(function (p) { return p.on && p.on.n > 0; });
+    var patterns = computePatterns();
 
     if (patterns.length) {
       var pc = el('<div class="card"><div class="card-head"><div><h2>Does the day change it?</h2>' +
         '<p class="sub">Your ratings on days you tagged, against days you didn\'t.</p></div></div></div>');
       patterns.forEach(function (p) {
-        var enough = p.on && p.off && p.on.n >= 2 && p.off.n >= 2;
-        var desc, cls = 'flat', label = '—';
-        if (!enough) {
-          var have = (p.on ? p.on.n : 0) + ' / ' + (p.off ? p.off.n : 0);
-          desc = p.metric.label.toLowerCase() + ' · needs a few more rated days (' + have + ')';
-        } else {
-          var diff = p.on.avg - p.off.avg;
-          var better = p.metric.lowerIsBetter ? diff < 0 : diff > 0;
-          label = (diff > 0 ? '+' : '') + diff.toFixed(1);
-          cls = Math.abs(diff) < 0.4 ? 'flat' : (better ? 'up' : 'down');
-          desc = p.metric.label.toLowerCase() + ' ' + p.on.avg.toFixed(1) + ' ' + p.onWord +
-            ' (' + p.on.n + ' days) vs ' + p.off.avg.toFixed(1) + ' ' + p.offWord + ' (' + p.off.n + ')';
-        }
+        var r = patternLine(p);
         pc.appendChild(el(
           '<div class="trend"><span class="dot-lg" style="background:' + esc(p.area.color) + '"></span>' +
           '<div class="grow"><div class="name">' + esc(p.name) + '</div>' +
-          '<div class="desc">' + esc(desc) + '</div></div>' +
-          '<div class="delta ' + cls + '">' + label + '</div></div>'
+          '<div class="desc">' + esc(r.desc) + '</div></div>' +
+          '<div class="delta ' + r.cls + '">' + r.label + '</div></div>'
         ));
       });
       root.appendChild(pc);
     }
+
+    var sum = el('<div class="card"><div class="card-head"><div><h2>Take it to an appointment</h2>' +
+      '<p class="sub">Everything the tracker knows, as plain text — background, ratings with ' +
+      '7- and 30-day averages, what you actually did, and how tagged days compare.</p></div></div>' +
+      '<textarea class="s-text" readonly rows="9"></textarea>' +
+      '<div class="btnrow"><button class="btn primary s-copy">Copy</button>' +
+      '<button class="btn s-save">Download .txt</button></div></div>');
+    var sText = sum.querySelector('.s-text');
+    sText.value = appointmentSummary();
+    sum.querySelector('.s-copy').addEventListener('click', function (e) {
+      var btn = e.target;
+      sText.select();
+      var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1800); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(sText.value).then(done, function () { btn.textContent = 'Select all and copy'; });
+      } else {
+        btn.textContent = 'Select all and copy';
+      }
+    });
+    sum.querySelector('.s-save').addEventListener('click', function () {
+      offerDownload('growth-rings-summary-' + today() + '.txt', sText.value);
+    });
+    root.appendChild(sum);
 
     var recent = lastDays(7).slice().reverse().filter(function (k) { return (S.notes[k] || '').trim(); });
     if (recent.length) {
@@ -704,6 +765,96 @@
   }
 
   /* ------------------------------------------------------------ view: invest */
+
+  /* ------------------------------------------------- summary for a clinician */
+
+  /* Walking into an appointment with dates and numbers beats walking in with an
+     impression. This writes out what the tracker actually knows, in plain text. */
+  function appointmentSummary() {
+    var L = [], t = today();
+    L.push('Growth Rings — summary prepared ' + t);
+    L.push('Self-tracked by the patient. Not a clinical record.');
+
+    S.areas.forEach(function (area) {
+      L.push('');
+      L.push('=== ' + area.name + ' ===');
+      if (area.note) L.push(area.note);
+      if (area.history) { L.push(''); L.push(area.history); }
+
+      var rated = area.metrics.filter(function (m) { return m.label; });
+      if (rated.length) {
+        L.push('');
+        L.push('Daily 0–10 ratings');
+        rated.forEach(function (m) {
+          var now = (S.metrics[t] || {})[m.id];
+          var a7 = metricAvg(m.id, lastDays(7));
+          var a30 = metricAvg(m.id, lastDays(30));
+          var note = (typeof now === 'number') ? standoutNote(m, now) : null;
+          L.push('  - ' + m.label + ' (' + (m.lowerIsBetter ? '0 best, 10 worst' : '0 worst, 10 best') + '): ' +
+            'today ' + (typeof now === 'number' ? now : 'not rated') +
+            ', 7-day avg ' + (a7 == null ? '—' : a7.toFixed(1)) +
+            ', 30-day avg ' + (a30 == null ? '—' : a30.toFixed(1)) +
+            (note ? ' — ' + note.text : ''));
+        });
+      }
+
+      if (area.actions.length) {
+        var d14 = lastDays(14);
+        L.push('');
+        L.push('What was done, last 14 days');
+        area.actions.forEach(function (act) {
+          L.push('  - ' + act.label + ': ' + hits(act.id, d14) + ' of ' + (act.target * 2) + ' planned');
+        });
+      }
+
+      var tagged = area.flags.filter(function (f) {
+        return Object.keys(S.flags).some(function (d) { return S.flags[d][f.id]; });
+      });
+      if (tagged.length) {
+        L.push('');
+        L.push('Days tagged (all history)');
+        tagged.forEach(function (f) {
+          var n = Object.keys(S.flags).filter(function (d) { return S.flags[d][f.id]; });
+          var last = n.slice().sort().pop();
+          L.push('  - ' + f.label + ': ' + n.length + (n.length === 1 ? ' day' : ' days') + ', most recently ' + last);
+        });
+      }
+    });
+
+    var pats = computePatterns();
+    if (pats.length) {
+      L.push('');
+      L.push('=== Ratings on tagged days vs other days ===');
+      pats.forEach(function (p) {
+        var r = patternLine(p);
+        if (r.enough) L.push('  - ' + p.name + ': ' + r.desc + ' (' + r.label + ')');
+      });
+    }
+
+    var notes = [];
+    Object.keys(S.notes).forEach(function (d) { if ((S.notes[d] || '').trim()) notes.push(d); });
+    notes.sort().reverse();
+    if (notes.length) {
+      L.push('');
+      L.push('=== Recent notes ===');
+      notes.slice(0, 20).forEach(function (d) { L.push('  ' + d + ' — ' + S.notes[d].replace(/\s+/g, ' ')); });
+    }
+
+    return L.join('\n');
+  }
+
+  /* hands the viewer a file wherever that is possible, and falls back to a
+     plain download when the page is opened outside a host that mediates it */
+  function offerDownload(name, text) {
+    if (window.claude && typeof window.claude.use === 'function') {
+      window.claude.use('downloads').then(function (dl) {
+        if (dl) dl.save({ filename: name, data: text }).catch(function () { /* declined */ });
+        else anchorSave(name, text);
+      }).catch(function () { anchorSave(name, text); });
+    } else {
+      anchorSave(name, text);
+    }
+  }
 
   function renderInvest() {
     var root = document.getElementById('view-invest');
@@ -816,6 +967,13 @@
         '<input type="text" class="a-note" value="' + esc(area.note || '') + '" placeholder="what is going on here"></label>');
       note.querySelector('input').addEventListener('change', function (e) { area.note = e.target.value; save(); });
       card.appendChild(note);
+
+      var hist = el('<label class="field"><span>Background &amp; history — kept off the Today tab, ' +
+        'included in the appointment summary</span>' +
+        '<textarea class="a-history" rows="4" placeholder="injuries, surgeries, dates, what a clinician would want to know"></textarea></label>');
+      hist.querySelector('textarea').value = area.history || '';
+      hist.querySelector('textarea').addEventListener('change', function (e) { area.history = e.target.value; save(); });
+      card.appendChild(hist);
 
       var sw = el('<div class="swatches" style="margin-bottom:12px"></div>');
       PALETTE.forEach(function (c) {
@@ -976,16 +1134,7 @@
     data.querySelector('.sync-text').textContent = SYNC_TEXT[syncState] || SYNC_TEXT.local;
     data.querySelector('.sync').classList.toggle('on', syncState === 'synced');
     data.querySelector('.d-export').addEventListener('click', function () {
-      var name = 'growth-rings-' + today() + '.json';
-      var json = JSON.stringify(S, null, 2);
-      if (window.claude && typeof window.claude.use === 'function') {
-        window.claude.use('downloads').then(function (dl) {
-          if (dl) dl.save({ filename: name, data: json }).catch(function () { /* viewer declined */ });
-          else anchorSave(name, json);
-        }).catch(function () { anchorSave(name, json); });
-      } else {
-        anchorSave(name, json);
-      }
+      offerDownload('growth-rings-' + today() + '.json', JSON.stringify(S, null, 2));
     });
     var file = data.querySelector('.d-file');
     data.querySelector('.d-import').addEventListener('click', function () { file.click(); });
