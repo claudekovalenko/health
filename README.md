@@ -60,6 +60,11 @@ knee crunching, shoulder tightness. An area can carry as many as you want. The
 Progress tab puts this week's average against last week's, so you can tell
 whether the work is doing anything.
 
+When today's rating is unusual, it says so under the slider — *worst in 23
+days*, *best in 15 days* — by looking back for the last day that was this bad
+or this good. It stays quiet until there is enough history behind it to mean
+something.
+
 **Day tags** record what a day was like — "loud place", "ear protection with
 me", "on my feet all day" — tapped on the Today tab. Mark a tag as an
 *exposure* (something you were subjected to) or a *protection* (something you

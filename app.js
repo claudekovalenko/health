@@ -39,7 +39,8 @@
           ],
           flags: [
             { id: 'knee-walk', label: 'On my feet all day', kind: 'exposure' },
-            { id: 'leg-heavy', label: 'Heavy leg day (squats, hills, sprint)', kind: 'exposure' }
+            { id: 'leg-heavy', label: 'Heavy leg day (squats, hills, sprint)', kind: 'exposure' },
+            { id: 'ham-curl', label: 'Hamstring curl machine', kind: 'exposure' }
           ],
           actions: [
             { id: 'knee5', label: 'Squats (bodyweight or loaded)', coins: 4, target: 3 },
@@ -127,6 +128,14 @@
         addMetric(knee, { id: 'ham-sore', label: 'Hamstring soreness', low: 'easy', high: 'sore', lowerIsBetter: true });
         addFlag(knee, { id: 'leg-heavy', label: 'Heavy leg day (squats, hills, sprint)', kind: 'exposure' });
         addAction(knee, { id: 'knee6', label: 'Ice the hamstring after loading', coins: 2, target: 3 }, 1);
+      }
+    },
+    {
+      id: 'curl-machine-tag',
+      apply: function (st) {
+        var knee = areaById(st, 'knee');
+        if (!knee) return;
+        addFlag(knee, { id: 'ham-curl', label: 'Hamstring curl machine', kind: 'exposure' });
       }
     }
   ];
@@ -326,6 +335,27 @@
     return { avg: sum / vals.length, n: vals.length };
   }
 
+  /* "the most pain it has been in a while" deserves an actual number: how far
+     back you have to go to find a day that was this bad (or this good). Only
+     speaks up once there is enough history behind it to mean something. */
+  function standoutNote(metric, value) {
+    var rated = 0, asBadAt = 0, asGoodAt = 0, oldest = 0;
+    for (var i = 1; i <= 180; i++) {
+      var v = (S.metrics[shift(-i)] || {})[metric.id];
+      if (typeof v !== 'number') continue;
+      rated++; oldest = i;
+      if (!asBadAt && (metric.lowerIsBetter ? v >= value : v <= value)) asBadAt = i;
+      if (!asGoodAt && (metric.lowerIsBetter ? v <= value : v >= value)) asGoodAt = i;
+      if (asBadAt && asGoodAt) break;
+    }
+    if (rated < 6) return null;
+    var worstSpan = asBadAt || oldest;
+    var bestSpan = asGoodAt || oldest;
+    if (worstSpan >= 7 && worstSpan >= bestSpan) return { text: 'worst in ' + worstSpan + ' days', cls: 'bad' };
+    if (bestSpan >= 7) return { text: 'best in ' + bestSpan + ' days', cls: 'good' };
+    return null;
+  }
+
   function metricAvg(areaId, days) {
     var vals = days.map(function (d) { return S.metrics[d] && S.metrics[d][areaId]; })
       .filter(function (v) { return typeof v === 'number'; });
@@ -479,10 +509,21 @@
           '<div class="metric-head" style="margin:4px 0 0"><span>' + esc(metric.low || '0') + '</span><span>' + esc(metric.high || '10') + '</span></div>' +
           '</div>'
         );
+        var noteEl = el('<div class="metric-note"></div>');
+        m.appendChild(noteEl);
+        var refreshNote = function () {
+          var val = (S.metrics[t] || {})[metric.id];
+          var n = (typeof val === 'number') ? standoutNote(metric, val) : null;
+          noteEl.textContent = n ? n.text : '';
+          noteEl.className = 'metric-note' + (n ? ' ' + n.cls : '');
+        };
+        refreshNote();
+
         m.querySelector('input').addEventListener('input', function (e) {
           if (!S.metrics[t]) S.metrics[t] = {};
           S.metrics[t][metric.id] = +e.target.value;
           m.querySelector('.metric-head b').textContent = e.target.value + '/10';
+          refreshNote();
           save();
         });
         card.appendChild(m);
