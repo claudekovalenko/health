@@ -71,7 +71,8 @@ main { padding: 0 16px; }
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; padding: max(14px, env(safe-area-inset-top)) 16px 10px;
 }
-.brand { display: flex; align-items: center; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.coin-chip { cursor: pointer; }
 .brand h1 { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin: 0; letter-spacing: -.01em; }
 .brand p { margin: 1px 0 0; font-size: 12px; color: var(--ink-3); }
 .brand-mark {
@@ -92,11 +93,13 @@ main { padding: 0 16px; }
 .tabs {
   display: flex; gap: 6px; padding: 4px; margin: 0 16px 16px;
   background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
+.tabs::-webkit-scrollbar { display: none; }
 .tab {
-  flex: 1; appearance: none; border: 0; background: transparent;
+  flex: none; appearance: none; border: 0; background: transparent;
   color: var(--ink-2); font: inherit; font-weight: 600; font-size: 13px;
-  padding: 8px 4px; border-radius: 999px; cursor: pointer;
+  padding: 8px 13px; border-radius: 999px; cursor: pointer; white-space: nowrap;
 }
 .tab.is-active { background: var(--card-2); color: var(--ink); box-shadow: var(--shadow); }
 
@@ -296,33 +299,69 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
   * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+/* ---------- profiles ---------- */
+.backlink {
+  appearance: none; background: none; border: 0; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-3);
+  padding: 2px 0 10px;
+}
+.backlink:hover { color: var(--ink); }
+
+.prof-head .area-top h2 { font-size: 18px; }
+
+.area-link {
+  display: flex; align-items: center; gap: 11px; width: 100%;
+  background: none; border: 0; color: inherit; font: inherit;
+  padding: 2px 0 10px; text-align: left; cursor: pointer;
+}
+.area-link .grow { flex: 1; min-width: 0; font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+.area-link .grow .name { display: block; font-family: var(--font-display); }
+.area-link .grow .desc { display: block; font-family: var(--font-body); font-size: 11.5px; font-weight: 400; color: var(--ink-3); }
+.area-link .muted { font-size: 12px; white-space: nowrap; }
+.area-link:hover .muted { color: var(--ink); }
+
+/* ---------- findings ---------- */
+.finding {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 0; border-top: 1px solid var(--line); font-size: 13.5px; line-height: 1.5;
+}
+.finding:first-of-type { border-top: 0; padding-top: 2px; }
+.finding .tone {
+  flex: none; width: 8px; height: 8px; border-radius: 50%; margin-top: 7px;
+  background: var(--ink-3);
+}
+.finding .tone.good, .finding .tone.up { background: var(--good); }
+.finding .tone.bad, .finding .tone.down { background: var(--bad); }
+
+/* ---------- collapsible setup ---------- */
+details.setup > summary {
+  cursor: pointer; list-style: none; font-family: var(--font-display);
+  font-size: 15px; font-weight: 600; color: var(--ink-2);
+}
+details.setup > summary::-webkit-details-marker { display: none; }
+details.setup > summary::after { content: " ›"; color: var(--ink-3); }
+details.setup[open] > summary::after { content: " ⌄"; }
+details.setup > summary:hover { color: var(--ink); }
+.setup-body { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.setup-body .card { box-shadow: none; }
 </style>
 <header class="topbar">
-  <div class="brand">
+  <div class="brand" role="button" tabindex="0">
     <span class="brand-mark" aria-hidden="true"></span>
     <div>
       <h1>Growth Rings</h1>
       <p id="dateLine"></p>
     </div>
   </div>
-  <div class="coin-chip" title="Coins available to invest">
+  <div class="coin-chip" role="button" tabindex="0" title="Coins available to invest">
     <span class="coin">◎</span><span id="coinBalance">0</span>
   </div>
 </header>
 
-<nav class="tabs" role="tablist">
-  <button class="tab is-active" data-view="today" role="tab">Today</button>
-  <button class="tab" data-view="progress" role="tab">Progress</button>
-  <button class="tab" data-view="invest" role="tab">Invest</button>
-  <button class="tab" data-view="areas" role="tab">Areas</button>
-</nav>
+<nav class="tabs" id="nav" aria-label="Profiles"></nav>
 
-<main>
-  <section id="view-today" class="view"></section>
-  <section id="view-progress" class="view" hidden></section>
-  <section id="view-invest" class="view" hidden></section>
-  <section id="view-areas" class="view" hidden></section>
-</main>
+<main id="app"></main>
 
 <footer class="foot">
   <p id="storageLine">Everything stays on this device (browser storage). Export a backup from the Areas tab.</p>
@@ -825,14 +864,142 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
       '<polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="' + (lowerIsBetter ? .85 : .85) + '"/></svg>';
   }
 
+  /* ---------------------------------------------------------------- navigation */
+
+  /* Views are addressed by name: 'today', 'coins', or 'area:<id>'. Profiles are
+     the centre of the app — everything about one part of you in one place. */
+
+  function go(view) {
+    S.view = view;
+    save();
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function currentArea() {
+    if (String(S.view).indexOf('area:') !== 0) return null;
+    return S.areas.filter(function (a) { return a.id === S.view.slice(5); })[0] || null;
+  }
+
+  function renderNav() {
+    var nav = document.getElementById('nav');
+    nav.innerHTML = '';
+    var tabs = [{ view: 'today', label: 'Today' }];
+    S.areas.forEach(function (a) {
+      tabs.push({ view: 'area:' + a.id, label: a.emoji + ' ' + shortName(a.name) });
+    });
+    tabs.push({ view: 'coins', label: '◎ Coins' });
+
+    tabs.forEach(function (t) {
+      var b = el('<button class="tab' + (S.view === t.view ? ' is-active' : '') + '" type="button">' + esc(t.label) + '</button>');
+      b.addEventListener('click', function () { go(t.view); });
+      nav.appendChild(b);
+    });
+  }
+
+  /* ------------------------------------------------------------ shared pieces */
+
+  /* The daily check-in for one area: what you did, what the day was like, how it
+     felt. Used on Today and again on the area's own profile. */
+  function logBlock(area, opts) {
+    var t = today(), days = week();
+    var wrap = el('<div></div>');
+
+    var list = el('<ul class="actions"></ul>');
+    area.actions.forEach(function (act) {
+      var done = isDone(t, act.id);
+      var li = el('<li></li>');
+      var btn = el(
+        '<button class="act' + (done ? ' done' : '') + '" type="button">' +
+        '<span class="box">✓</span>' +
+        '<span class="act-label">' + esc(act.label) + '</span>' +
+        '<span class="act-meta">' + hits(act.id, days) + '/' + act.target + ' wk · <b>◎' + act.coins + '</b></span>' +
+        '</button>'
+      );
+      btn.addEventListener('click', function () { toggle(t, act.id); });
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+    if (!area.actions.length && !opts.quiet) {
+      list.appendChild(el('<li><p class="empty">No habits here yet — add one in Setup.</p></li>'));
+    }
+    wrap.appendChild(list);
+
+    if (area.flags.length) {
+      var chips = el('<div class="flags"></div>');
+      area.flags.forEach(function (flag) {
+        var on = flagOn(t, flag.id);
+        var chip = el('<button class="flag' + (on ? ' on' : '') + '" type="button">' + esc(flag.label) + '</button>');
+        if (on) chip.style.borderColor = area.color;
+        chip.addEventListener('click', function () {
+          var nowOn = toggleFlag(t, flag.id);
+          chip.classList.toggle('on', nowOn);
+          chip.style.borderColor = nowOn ? area.color : '';
+        });
+        chips.appendChild(chip);
+      });
+      wrap.appendChild(chips);
+    }
+
+    area.metrics.forEach(function (metric) {
+      if (!metric.label) return;
+      var cur = (S.metrics[t] || {})[metric.id];
+      var m = el(
+        '<div class="metric">' +
+        '<div class="metric-head"><span>' + esc(metric.label) + ' today</span>' +
+        '<b>' + (typeof cur === 'number' ? cur + '/10' : 'not set') + '</b></div>' +
+        '<input type="range" min="0" max="10" step="1" value="' + (typeof cur === 'number' ? cur : 5) + '">' +
+        '<div class="metric-head" style="margin:4px 0 0"><span>' + esc(metric.low || '0') + '</span><span>' + esc(metric.high || '10') + '</span></div>' +
+        '</div>'
+      );
+      var noteEl = el('<div class="metric-note"></div>');
+      m.appendChild(noteEl);
+      var refreshNote = function () {
+        var val = (S.metrics[t] || {})[metric.id];
+        var n = (typeof val === 'number') ? standoutNote(metric, val) : null;
+        noteEl.textContent = n ? n.text : '';
+        noteEl.className = 'metric-note' + (n ? ' ' + n.cls : '');
+      };
+      refreshNote();
+      m.querySelector('input').addEventListener('input', function (e) {
+        if (!S.metrics[t]) S.metrics[t] = {};
+        S.metrics[t][metric.id] = +e.target.value;
+        m.querySelector('.metric-head b').textContent = e.target.value + '/10';
+        refreshNote();
+        save();
+      });
+      wrap.appendChild(m);
+    });
+
+    return wrap;
+  }
+
+  function toggle(dayKey, actionId) {
+    if (!S.log[dayKey]) S.log[dayKey] = {};
+    if (S.log[dayKey][actionId]) delete S.log[dayKey][actionId];
+    else S.log[dayKey][actionId] = true;
+    save();
+    render();
+  }
+
+  function dayNoteCard() {
+    var t = today();
+    var note = el(
+      '<div class="card"><div class="card-head"><div><h2>Note for today</h2>' +
+      '<p class="sub">Anything you noticed — triggers, flare-ups, what helped.</p></div></div>' +
+      '<textarea placeholder="e.g. ear was louder after the loud restaurant; knee felt solid on the stairs"></textarea></div>'
+    );
+    var ta = note.querySelector('textarea');
+    ta.value = S.notes[t] || '';
+    ta.addEventListener('change', function () { S.notes[t] = ta.value; save(); });
+    return note;
+  }
+
   /* ------------------------------------------------------------- view: today */
 
-  function renderToday() {
-    var root = document.getElementById('view-today');
-    root.innerHTML = '';
-    var t = today(), days = week();
+  function renderToday(root) {
+    var days = week(), overall = overallScore(days);
 
-    var overall = overallScore(days);
     var hero = el(
       '<div class="card"><div class="hero">' +
       ring(overall, 108, 12, 'var(--accent)') +
@@ -845,268 +1012,242 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
       '</div></div></div></div>'
     );
 
-    // Every area's ring, side by side, so the whole picture reads before you
-    // scroll into any single one. Tap a ring to jump to that area.
     if (S.areas.length) {
       var summary = el('<div class="summary"></div>');
       S.areas.forEach(function (area) {
-        var sc = areaScore(area, days);
-        var b = el('<button class="sum" type="button" title="' + esc(area.name) + ' — ' + pct(sc) + '% this week">' +
-          ring(sc, 52, 6, esc(area.color)) +
+        var b = el('<button class="sum" type="button" title="Open the ' + esc(shortName(area.name)) + ' profile">' +
+          ring(areaScore(area, days), 52, 6, esc(area.color)) +
           '<span class="sum-name">' + esc(area.emoji) + ' ' + esc(shortName(area.name)) + '</span></button>');
-        b.addEventListener('click', function () {
-          var card = document.getElementById('area-' + area.id);
-          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
+        b.addEventListener('click', function () { go('area:' + area.id); });
         summary.appendChild(b);
       });
       hero.appendChild(summary);
     }
-
     root.appendChild(hero);
 
     if (!S.areas.length) {
-      root.appendChild(el('<div class="card"><p class="empty">No areas yet. Add one in the <b>Areas</b> tab.</p></div>'));
-      return;
+      root.appendChild(el('<div class="card"><p class="empty">No profiles yet. Add one below.</p></div>'));
     }
 
     S.areas.forEach(function (area) {
-      var score = areaScore(area, days);
-      var card = el('<div class="card area" id="area-' + esc(area.id) + '" style="border-left-color:' + esc(area.color) + '"></div>');
-
-      card.appendChild(el(
-        '<div class="area-top">' + ring(score, 62, 8, esc(area.color)) +
-        '<div class="grow"><h2><span class="emoji">' + esc(area.emoji) + '</span> ' + esc(area.name) + '</h2>' +
-        (area.note ? '<p class="sub">' + esc(area.note) + '</p>' : '') + '</div></div>'
-      ));
-
-      var list = el('<ul class="actions"></ul>');
-      area.actions.forEach(function (act) {
-        var done = isDone(t, act.id);
-        var li = el('<li></li>');
-        var btn = el(
-          '<button class="act' + (done ? ' done' : '') + '" type="button">' +
-          '<span class="box">✓</span>' +
-          '<span class="act-label">' + esc(act.label) + '</span>' +
-          '<span class="act-meta">' + hits(act.id, days) + '/' + act.target + ' wk · <b>◎' + act.coins + '</b></span>' +
-          '</button>'
-        );
-        btn.addEventListener('click', function () { toggle(t, act.id); });
-        li.appendChild(btn);
-        list.appendChild(li);
-      });
-      if (!area.actions.length) list.appendChild(el('<li><p class="empty">No habits here yet — add some in Areas.</p></li>'));
-      card.appendChild(list);
-
-      // what the day was like — the context a rating needs to mean anything
-      if (area.flags.length) {
-        var chips = el('<div class="flags"></div>');
-        area.flags.forEach(function (flag) {
-          var on = flagOn(t, flag.id);
-          var chip = el('<button class="flag' + (on ? ' on' : '') + '" type="button">' +
-            esc(flag.label) + '</button>');
-          if (on) chip.style.borderColor = area.color;
-          chip.addEventListener('click', function () {
-            var nowOn = toggleFlag(t, flag.id);
-            chip.classList.toggle('on', nowOn);
-            chip.style.borderColor = nowOn ? area.color : '';
-          });
-          chips.appendChild(chip);
-        });
-        card.appendChild(chips);
-      }
-
-      area.metrics.forEach(function (metric) {
-        if (!metric.label) return;
-        var cur = (S.metrics[t] || {})[metric.id];
-        var m = el(
-          '<div class="metric">' +
-          '<div class="metric-head"><span>' + esc(metric.label) + ' today</span>' +
-          '<b>' + (typeof cur === 'number' ? cur + '/10' : 'not set') + '</b></div>' +
-          '<input type="range" min="0" max="10" step="1" value="' + (typeof cur === 'number' ? cur : 5) + '">' +
-          '<div class="metric-head" style="margin:4px 0 0"><span>' + esc(metric.low || '0') + '</span><span>' + esc(metric.high || '10') + '</span></div>' +
-          '</div>'
-        );
-        var noteEl = el('<div class="metric-note"></div>');
-        m.appendChild(noteEl);
-        var refreshNote = function () {
-          var val = (S.metrics[t] || {})[metric.id];
-          var n = (typeof val === 'number') ? standoutNote(metric, val) : null;
-          noteEl.textContent = n ? n.text : '';
-          noteEl.className = 'metric-note' + (n ? ' ' + n.cls : '');
-        };
-        refreshNote();
-
-        m.querySelector('input').addEventListener('input', function (e) {
-          if (!S.metrics[t]) S.metrics[t] = {};
-          S.metrics[t][metric.id] = +e.target.value;
-          m.querySelector('.metric-head b').textContent = e.target.value + '/10';
-          refreshNote();
-          save();
-        });
-        card.appendChild(m);
-      });
-
+      var card = el('<div class="card area" style="border-left-color:' + esc(area.color) + '"></div>');
+      var head = el('<button class="area-link" type="button">' +
+        '<span class="emoji">' + esc(area.emoji) + '</span>' +
+        '<span class="grow">' + esc(area.name) + '</span>' +
+        '<span class="muted">profile ›</span></button>');
+      head.addEventListener('click', function () { go('area:' + area.id); });
+      card.appendChild(head);
+      card.appendChild(logBlock(area, {}));
       root.appendChild(card);
     });
 
-    var note = el(
-      '<div class="card"><div class="card-head"><div><h2>Note for today</h2>' +
-      '<p class="sub">Anything you noticed — triggers, flare-ups, what helped.</p></div></div>' +
-      '<textarea placeholder="e.g. ear was louder after the loud restaurant; knee felt solid on the stairs"></textarea></div>'
-    );
-    var ta = note.querySelector('textarea');
-    ta.value = S.notes[t] || '';
-    ta.addEventListener('change', function () { S.notes[t] = ta.value; save(); });
-    root.appendChild(note);
+    root.appendChild(dayNoteCard());
+    root.appendChild(appCard());
   }
 
-  function toggle(dayKey, actionId) {
-    if (!S.log[dayKey]) S.log[dayKey] = {};
-    if (S.log[dayKey][actionId]) delete S.log[dayKey][actionId];
-    else S.log[dayKey][actionId] = true;
-    save();
-    render();
-  }
+  /* ----------------------------------------------------------- view: profile */
 
-  /* ---------------------------------------------------------- view: progress */
+  /* What the data is actually saying about this area, in sentences. */
+  function findings(area) {
+    var out = [], days = week(), prev = prevWeek(), t = today();
 
-  function renderProgress() {
-    var root = document.getElementById('view-progress');
-    root.innerHTML = '';
-    var days = week(), prev = prevWeek();
-
-    var d14 = lastDays(14);
-    var bars = el('<div class="card"><div class="card-head"><div><h2>Last 14 days</h2>' +
-      '<p class="sub">How much of a normal day you covered, day by day.</p></div></div>' +
-      '<div class="bars"></div><div class="bars-x"></div></div>');
-    var barsEl = bars.querySelector('.bars'), xEl = bars.querySelector('.bars-x');
-    d14.forEach(function (k) {
-      var v = dayCompletion(k);
-      var col = el('<div><span style="height:' + Math.round(Math.min(1, v) * 100) + '%"></span></div>');
-      col.title = k + ' — ' + pct(Math.min(1, v)) + '%';
-      if (k === today()) col.querySelector('span').style.opacity = '.75';
-      barsEl.appendChild(col);
-      xEl.appendChild(el('<span>' + weekdayShort(k) + '</span>'));
+    area.metrics.forEach(function (m) {
+      if (!m.label) return;
+      var now = (S.metrics[t] || {})[m.id];
+      if (typeof now === 'number') {
+        var sn = standoutNote(m, now);
+        if (sn) out.push({ text: m.label + ' is ' + now + '/10 today — ' + sn.text + '.', tone: sn.cls });
+      }
+      var a = metricAvg(m.id, days), b = metricAvg(m.id, prev);
+      if (a != null && b != null && Math.abs(a - b) >= 0.3) {
+        var better = m.lowerIsBetter ? a < b : a > b;
+        out.push({
+          text: m.label + ' averaged ' + a.toFixed(1) + ' this week against ' + b.toFixed(1) + ' last — ' +
+            (better ? 'moving the right way' : 'moving the wrong way') + '.',
+          tone: better ? 'good' : 'bad'
+        });
+      }
     });
-    root.appendChild(bars);
 
-    var tr = el('<div class="card"><div class="card-head"><div><h2>This week vs last</h2>' +
-      '<p class="sub">Consistency in each area, and where the trend is heading.</p></div></div></div>');
-    S.areas.forEach(function (a) {
-      var now = areaScore(a, days), before = areaScore(a, prev);
+    computePatterns().filter(function (p) { return p.area.id === area.id; }).forEach(function (p) {
+      var r = patternLine(p);
+      if (!r.enough) return;
+      var diff = p.on.avg - p.off.avg;
+      if (Math.abs(diff) < 0.4) return;
+      var better = p.metric.lowerIsBetter ? diff < 0 : diff > 0;
+      out.push({
+        text: p.name + ': ' + p.metric.label.toLowerCase() + ' runs ' + p.on.avg.toFixed(1) + ' ' + p.onWord +
+          ' against ' + p.off.avg.toFixed(1) + ' ' + p.offWord + ' (' + p.on.n + ' days vs ' + p.off.n + ').',
+        tone: better ? 'good' : 'bad'
+      });
+    });
+
+    var now = areaScore(area, days), before = areaScore(area, prev);
+    if (area.actions.length) {
       var d = pct(now) - pct(before);
-      var cls = d > 2 ? 'up' : (d < -2 ? 'down' : 'flat');
-      var sign = d > 0 ? '+' : '';
-      tr.appendChild(el(
-        '<div class="trend">' + ring(now, 42, 6, esc(a.color)) +
-        '<div class="grow"><div class="name">' + esc(a.emoji) + ' ' + esc(a.name) + '</div>' +
-        '<div class="desc">' + pct(before) + '% last week → ' + pct(now) + '% now</div></div>' +
-        '<div class="delta ' + cls + '">' + sign + d + '%</div></div>'
-      ));
-    });
-    if (!S.areas.length) tr.appendChild(el('<p class="empty">Nothing to compare yet.</p>'));
-    root.appendChild(tr);
+      out.push({
+        text: 'You are holding ' + pct(now) + '% of this profile’s habits' +
+          (Math.abs(d) < 3 ? ', about the same as last week.' : (d > 0 ? ', up ' + d + ' points on last week.' : ', down ' + Math.abs(d) + ' points on last week.')),
+        tone: Math.abs(d) < 3 ? 'flat' : (d > 0 ? 'good' : 'bad')
+      });
+    }
 
-    var rated = [];
-    S.areas.forEach(function (a) {
-      a.metrics.forEach(function (m) { if (m.label) rated.push({ area: a, metric: m }); });
+    return out;
+  }
+
+  function renderProfile(root, area) {
+    var days = week();
+
+    var back = el('<button class="backlink" type="button">‹ All profiles</button>');
+    back.addEventListener('click', function () { go('today'); });
+    root.appendChild(back);
+
+    root.appendChild(el(
+      '<div class="card area prof-head" style="border-left-color:' + esc(area.color) + '">' +
+      '<div class="area-top">' + ring(areaScore(area, days), 72, 9, esc(area.color)) +
+      '<div class="grow"><h2><span class="emoji">' + esc(area.emoji) + '</span> ' + esc(area.name) + '</h2>' +
+      (area.note ? '<p class="sub">' + esc(area.note) + '</p>' : '') +
+      '<p class="sub">' + pct(areaScore(area, days)) + '% consistency over the last 7 days</p>' +
+      '</div></div></div>'
+    ));
+
+    /* --- findings --- */
+    var f = findings(area);
+    var fc = el('<div class="card"><div class="card-head"><div><h2>Findings</h2>' +
+      '<p class="sub">What your own entries are saying, updated as you log.</p></div></div></div>');
+    if (f.length) {
+      f.forEach(function (x) {
+        fc.appendChild(el('<div class="finding"><span class="tone ' + x.tone + '"></span>' +
+          '<span>' + esc(x.text) + '</span></div>'));
+      });
+    } else {
+      fc.appendChild(el('<p class="empty">Nothing conclusive yet. Log a few more days and findings will appear here.</p>'));
+    }
+    root.appendChild(fc);
+
+    /* --- background --- */
+    var hc = el('<div class="card"><div class="card-head"><div><h2>Background &amp; history</h2>' +
+      '<p class="sub">Injuries, surgeries, dates — the context a clinician would want.</p></div></div>' +
+      '<textarea class="h-text" rows="6" placeholder="what happened, when, and what has changed since"></textarea></div>');
+    var hta = hc.querySelector('textarea');
+    hta.value = area.history || '';
+    hta.addEventListener('change', function () { area.history = hta.value; save(); });
+    root.appendChild(hc);
+
+    /* --- log --- */
+    var lc = el('<div class="card"><div class="card-head"><div><h2>Today</h2>' +
+      '<p class="sub">Check off what you did, tag what the day was like, rate how it feels.</p></div></div></div>');
+    lc.appendChild(logBlock(area, { quiet: false }));
+    root.appendChild(lc);
+
+    /* --- trends --- */
+    var rated = area.metrics.filter(function (m) { return m.label; });
+    var d14 = lastDays(14);
+    var tc = el('<div class="card"><div class="card-head"><div><h2>Over time</h2>' +
+      '<p class="sub">Last 14 days.</p></div></div></div>');
+
+    var bars = el('<div class="bars"></div>'), xs = el('<div class="bars-x"></div>');
+    d14.forEach(function (k) {
+      var v = areaDayCompletion(area, k);
+      var col = el('<div><span style="height:' + Math.round(Math.min(1, v) * 100) + '%;background:' + esc(area.color) + '"></span></div>');
+      col.title = k + ' — ' + pct(Math.min(1, v)) + '%';
+      bars.appendChild(col);
+      xs.appendChild(el('<span>' + weekdayShort(k) + '</span>'));
     });
+    tc.appendChild(el('<h3 class="section" style="margin-top:0">Habits kept</h3>'));
+    tc.appendChild(bars); tc.appendChild(xs);
 
     if (rated.length) {
-      var mc = el('<div class="card"><div class="card-head"><div><h2>How it has felt</h2>' +
-        '<p class="sub">Your daily ratings, last 14 days.</p></div></div></div>');
-      rated.forEach(function (r) {
-        var a = r.area, m = r.metric;
+      tc.appendChild(el('<h3 class="section">Ratings</h3>'));
+      rated.forEach(function (m) {
         var vals = d14.map(function (k) { return (S.metrics[k] || {})[m.id]; });
         var known = vals.filter(function (v) { return typeof v === 'number'; });
-        var nowAvg = metricAvg(m.id, days), prevAvg = metricAvg(m.id, prev);
+        var a = metricAvg(m.id, days), b = metricAvg(m.id, prevWeek());
         var desc = 'no ratings yet', cls = 'flat', label = '—';
-        if (nowAvg != null) {
-          label = nowAvg.toFixed(1);
+        if (a != null) {
+          label = a.toFixed(1);
           desc = '7-day average out of 10';
-          if (prevAvg != null) {
-            var diff = nowAvg - prevAvg;
+          if (b != null) {
+            var diff = a - b;
             var better = m.lowerIsBetter ? diff < 0 : diff > 0;
-            desc = prevAvg.toFixed(1) + ' → ' + nowAvg.toFixed(1) + (Math.abs(diff) < 0.2 ? ' · steady' : (better ? ' · better' : ' · worse'));
+            desc = b.toFixed(1) + ' → ' + a.toFixed(1) + (Math.abs(diff) < 0.2 ? ' · steady' : (better ? ' · better' : ' · worse'));
             cls = Math.abs(diff) < 0.2 ? 'flat' : (better ? 'up' : 'down');
           }
         }
-        // gaps get carried forward so the line stays readable
         var filled = [], last = 5;
         vals.forEach(function (v) { if (typeof v === 'number') last = v; filled.push(last); });
-        mc.appendChild(el(
-          '<div class="trend"><div style="flex:none">' + (known.length ? sparkline(filled, esc(a.color), m.lowerIsBetter) : '<div style="width:120px"></div>') + '</div>' +
+        tc.appendChild(el(
+          '<div class="trend"><div style="flex:none">' + (known.length ? sparkline(filled, esc(area.color), m.lowerIsBetter) : '<div style="width:120px"></div>') + '</div>' +
           '<div class="grow"><div class="name">' + esc(m.label) + '</div><div class="desc">' + esc(desc) + '</div></div>' +
           '<div class="delta ' + cls + '">' + label + '</div></div>'
         ));
       });
-      root.appendChild(mc);
     }
+    root.appendChild(tc);
 
-    var patterns = computePatterns();
-
-    if (patterns.length) {
-      var pc = el('<div class="card"><div class="card-head"><div><h2>Does the day change it?</h2>' +
-        '<p class="sub">Your ratings on days you tagged, against days you didn\'t.</p></div></div></div>');
-      patterns.forEach(function (p) {
-        var r = patternLine(p);
-        pc.appendChild(el(
-          '<div class="trend"><span class="dot-lg" style="background:' + esc(p.area.color) + '"></span>' +
-          '<div class="grow"><div class="name">' + esc(p.name) + '</div>' +
-          '<div class="desc">' + esc(r.desc) + '</div></div>' +
-          '<div class="delta ' + r.cls + '">' + r.label + '</div></div>'
-        ));
-      });
-      root.appendChild(pc);
-    }
-
-    var sum = el('<div class="card"><div class="card-head"><div><h2>Take it to an appointment</h2>' +
-      '<p class="sub">Everything the tracker knows, as plain text — background, ratings with ' +
-      '7- and 30-day averages, what you actually did, and how tagged days compare.</p></div></div>' +
-      '<textarea class="s-text" readonly rows="9"></textarea>' +
-      '<div class="btnrow"><button class="btn primary s-copy">Copy</button>' +
-      '<button class="btn s-save">Download .txt</button></div></div>');
-    var sText = sum.querySelector('.s-text');
-    sText.value = appointmentSummary();
-    sum.querySelector('.s-copy').addEventListener('click', function (e) {
-      var btn = e.target;
-      sText.select();
-      var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1800); };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(sText.value).then(done, function () { btn.textContent = 'Select all and copy'; });
-      } else {
-        btn.textContent = 'Select all and copy';
-      }
-    });
-    sum.querySelector('.s-save').addEventListener('click', function () {
-      offerDownload('growth-rings-summary-' + today() + '.txt', sText.value);
-    });
-    root.appendChild(sum);
-
-    var recent = lastDays(7).slice().reverse().filter(function (k) { return (S.notes[k] || '').trim(); });
+    /* --- notes mentioning this area's days --- */
+    var recent = lastDays(14).slice().reverse().filter(function (k) { return (S.notes[k] || '').trim(); });
     if (recent.length) {
-      var nc = el('<div class="card"><div class="card-head"><div><h2>Recent notes</h2></div></div></div>');
-      recent.forEach(function (k) {
+      var nc = el('<div class="card"><div class="card-head"><div><h2>Recent notes</h2>' +
+        '<p class="sub">Your own words, last 14 days.</p></div></div></div>');
+      recent.slice(0, 8).forEach(function (k) {
         nc.appendChild(el('<div class="trend"><div class="grow"><div class="desc">' + esc(k) + '</div>' +
           '<div class="name">' + esc(S.notes[k]) + '</div></div></div>'));
       });
       root.appendChild(nc);
     }
+
+    root.appendChild(summaryCard(area));
+    root.appendChild(setupCard(area));
   }
 
-  /* ------------------------------------------------------------ view: invest */
+  /* how much of this area's own daily share was covered on a given day */
+  function areaDayCompletion(area, dayKey) {
+    var earned = 0, expected = 0;
+    area.actions.forEach(function (act) {
+      expected += (Math.max(1, act.coins || 1) * Math.max(1, act.target || 1)) / 7;
+      if (isDone(dayKey, act.id)) earned += Math.max(1, act.coins || 1);
+    });
+    return expected ? Math.min(1.2, earned / expected) : 0;
+  }
 
   /* ------------------------------------------------- summary for a clinician */
 
-  /* Walking into an appointment with dates and numbers beats walking in with an
-     impression. This writes out what the tracker actually knows, in plain text. */
-  function appointmentSummary() {
+  function summaryCard(area) {
+    var who = area ? 'this profile' : 'every profile';
+    var card = el('<div class="card"><div class="card-head"><div><h2>Take it to an appointment</h2>' +
+      '<p class="sub">Everything the tracker knows about ' + who + ', as plain text — background, ' +
+      'ratings with 7- and 30-day averages, what you did, and how tagged days compare.</p></div></div>' +
+      '<textarea class="s-text" readonly rows="8"></textarea>' +
+      '<div class="btnrow"><button class="btn primary s-copy">Copy</button>' +
+      '<button class="btn s-save">Download .txt</button></div></div>');
+    var sText = card.querySelector('.s-text');
+    sText.value = appointmentSummary(area);
+    card.querySelector('.s-copy').addEventListener('click', function (e) {
+      var btn = e.target;
+      sText.select();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(sText.value).then(function () {
+          btn.textContent = 'Copied';
+          setTimeout(function () { btn.textContent = 'Copy'; }, 1800);
+        }, function () { btn.textContent = 'Select all and copy'; });
+      } else {
+        btn.textContent = 'Select all and copy';
+      }
+    });
+    card.querySelector('.s-save').addEventListener('click', function () {
+      offerDownload('growth-rings-' + (area ? shortName(area.name).toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'summary') +
+        '-' + today() + '.txt', sText.value);
+    });
+    return card;
+  }
+
+  function appointmentSummary(only) {
     var L = [], t = today();
     L.push('Growth Rings — summary prepared ' + t);
     L.push('Self-tracked by the patient. Not a clinical record.');
 
-    S.areas.forEach(function (area) {
+    S.areas.filter(function (a) { return !only || a.id === only.id; }).forEach(function (area) {
       L.push('');
       L.push('=== ' + area.name + ' ===');
       if (area.note) L.push(area.note);
@@ -1150,17 +1291,19 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
           L.push('  - ' + f.label + ': ' + n.length + (n.length === 1 ? ' day' : ' days') + ', most recently ' + last);
         });
       }
-    });
 
-    var pats = computePatterns();
-    if (pats.length) {
-      L.push('');
-      L.push('=== Ratings on tagged days vs other days ===');
+      var pats = computePatterns().filter(function (p) { return p.area.id === area.id; });
+      var shown = [];
       pats.forEach(function (p) {
         var r = patternLine(p);
-        if (r.enough) L.push('  - ' + p.name + ': ' + r.desc + ' (' + r.label + ')');
+        if (r.enough) shown.push('  - ' + p.name + ': ' + r.desc + ' (' + r.label + ')');
       });
-    }
+      if (shown.length) {
+        L.push('');
+        L.push('Ratings on tagged days vs other days');
+        shown.forEach(function (x) { L.push(x); });
+      }
+    });
 
     var notes = [];
     Object.keys(S.notes).forEach(function (d) { if ((S.notes[d] || '').trim()) notes.push(d); });
@@ -1174,8 +1317,6 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
     return L.join('\n');
   }
 
-  /* hands the viewer a file wherever that is possible, and falls back to a
-     plain download when the page is opened outside a host that mediates it */
   function offerDownload(name, text) {
     if (window.claude && typeof window.claude.use === 'function') {
       window.claude.use('downloads').then(function (dl) {
@@ -1187,9 +1328,9 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
     }
   }
 
-  function renderInvest() {
-    var root = document.getElementById('view-invest');
-    root.innerHTML = '';
+  /* ------------------------------------------------------------- view: coins */
+
+  function renderCoins(root) {
     var days = week(), bal = balance();
 
     var weakest = S.areas.filter(function (a) { return a.actions.length; })
@@ -1206,17 +1347,19 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
     ));
 
     if (weakest) {
-      root.appendChild(el(
-        '<div class="card"><div class="card-head"><div><h2>Where to put attention</h2>' +
-        '<p class="sub">Lowest consistency over the last 7 days.</p></div></div>' +
-        '<div class="trend" style="border-top:0">' + ring(areaScore(weakest, days), 42, 6, esc(weakest.color)) +
-        '<div class="grow"><div class="name">' + esc(weakest.emoji) + ' ' + esc(weakest.name) + '</div>' +
-        '<div class="desc">at ' + pct(areaScore(weakest, days)) + '% — one more rep this week moves it most</div></div></div>' +
-        (strongest && strongest !== weakest ?
-          '<p class="muted" style="margin:10px 0 0">Meanwhile ' + esc(strongest.name) + ' is holding at ' +
-          pct(areaScore(strongest, days)) + '%. Keep that one on cruise.</p>' : '') +
-        '</div>'
-      ));
+      var wc = el('<div class="card"><div class="card-head"><div><h2>Where to put attention</h2>' +
+        '<p class="sub">Lowest consistency over the last 7 days.</p></div></div></div>');
+      var row = el('<button class="area-link" type="button">' + ring(areaScore(weakest, days), 42, 6, esc(weakest.color)) +
+        '<span class="grow"><span class="name">' + esc(weakest.emoji) + ' ' + esc(weakest.name) + '</span>' +
+        '<span class="desc">at ' + pct(areaScore(weakest, days)) + '% — one more rep this week moves it most</span></span>' +
+        '<span class="muted">profile ›</span></button>');
+      row.addEventListener('click', function () { go('area:' + weakest.id); });
+      wc.appendChild(row);
+      if (strongest && strongest !== weakest) {
+        wc.appendChild(el('<p class="muted" style="margin:10px 0 0">Meanwhile ' + esc(shortName(strongest.name)) +
+          ' is holding at ' + pct(areaScore(strongest, days)) + '%. Keep that one on cruise.</p>'));
+      }
+      root.appendChild(wc);
     }
 
     var card = el('<div class="card"><div class="card-head"><div><h2>Invest your coins</h2>' +
@@ -1226,20 +1369,19 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
 
     S.investments.forEach(function (inv) {
       var area = S.areas.filter(function (a) { return a.id === inv.areaId; })[0];
-      var row = el('<div class="inv"><div class="grow">' +
+      var r = el('<div class="inv"><div class="grow">' +
         '<div class="name">' + (inv.done ? '✅ ' : '') + esc(inv.name) + '</div>' +
-        '<div class="why">' + (area ? esc(area.emoji) + ' ' + esc(area.name) : 'general') +
+        '<div class="why">' + (area ? esc(area.emoji) + ' ' + esc(shortName(area.name)) : 'general') +
         (inv.done ? ' · invested' : '') + '</div></div>' +
         '<div class="cost">◎' + inv.cost + '</div></div>');
       if (!inv.done) {
         var b = el('<button class="btn' + (bal >= inv.cost ? ' primary' : '') + '"' + (bal >= inv.cost ? '' : ' disabled') + '>Invest</button>');
         b.addEventListener('click', function () {
           S.spent = (S.spent || 0) + inv.cost;
-          inv.done = true;
-          inv.doneAt = today();
+          inv.done = true; inv.doneAt = today();
           save(); render();
         });
-        row.appendChild(b);
+        r.appendChild(b);
       } else {
         var u = el('<button class="btn ghost">Undo</button>');
         u.addEventListener('click', function () {
@@ -1247,16 +1389,16 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
           inv.done = false; delete inv.doneAt;
           save(); render();
         });
-        row.appendChild(u);
+        r.appendChild(u);
       }
-      list.appendChild(row);
+      list.appendChild(r);
     });
     if (!S.investments.length) list.appendChild(el('<p class="empty">No investments yet — add one below.</p>'));
 
     var form = el('<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px">' +
-      '<label class="field"><span>New investment</span><input type="text" class="i-name" placeholder="e.g. new running shoes"></label>' +
+      '<label class="field"><span>New investment</span><input type="text" class="i-name" placeholder="e.g. physio appointment"></label>' +
       '<div class="grid2"><label class="field"><span>Cost in coins</span><input type="number" class="i-cost" value="300" min="0" step="10"></label>' +
-      '<label class="field"><span>Area</span><select class="i-area"></select></label></div>' +
+      '<label class="field"><span>Profile</span><select class="i-area"></select></label></div>' +
       '<button class="btn">Add investment</button></div>');
     var sel = form.querySelector('.i-area');
     S.areas.forEach(function (a) { sel.appendChild(el('<option value="' + esc(a.id) + '">' + esc(a.name) + '</option>')); });
@@ -1264,199 +1406,177 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
     form.querySelector('button').addEventListener('click', function () {
       var name = form.querySelector('.i-name').value.trim();
       if (!name) return;
-      S.investments.push({
-        id: uid(), name: name,
-        cost: Math.max(0, +form.querySelector('.i-cost').value || 0),
-        areaId: sel.value, done: false
-      });
+      S.investments.push({ id: uid(), name: name, cost: Math.max(0, +form.querySelector('.i-cost').value || 0), areaId: sel.value, done: false });
       save(); render();
     });
     card.appendChild(form);
     root.appendChild(card);
   }
 
-  /* ------------------------------------------------------------- view: areas */
+  /* ------------------------------------------------------- setup for an area */
 
-  function renderAreas() {
-    var root = document.getElementById('view-areas');
-    root.innerHTML = '';
+  function setupCard(area) {
+    var idx = S.areas.indexOf(area);
+    var card = el('<details class="card setup"><summary>Set up this profile</summary><div class="setup-body"></div></details>');
+    var body = card.querySelector('.setup-body');
 
-    root.appendChild(el('<div class="card"><div class="card-head"><div><h2>Your areas</h2>' +
-      '<p class="sub">Rename, retune the weekly targets, or add whatever else you want to grow in. ' +
-      'Coins are just how much a habit is worth to you.</p></div></div></div>'));
+    var head = el('<div class="row" style="margin-bottom:10px">' +
+      '<input type="text" class="w-emoji a-emoji" value="' + esc(area.emoji) + '" maxlength="3">' +
+      '<input type="text" class="grow a-name" value="' + esc(area.name) + '"></div>');
+    head.querySelector('.a-emoji').addEventListener('change', function (e) { area.emoji = e.target.value; save(); render(); });
+    head.querySelector('.a-name').addEventListener('change', function (e) { area.name = e.target.value; save(); render(); });
+    body.appendChild(head);
 
-    S.areas.forEach(function (area, idx) {
-      var card = el('<div class="card area" style="border-left-color:' + esc(area.color) + '"></div>');
+    var note = el('<label class="field"><span>One-line note, shown under the title</span>' +
+      '<input type="text" class="a-note" value="' + esc(area.note || '') + '" placeholder="what is going on here"></label>');
+    note.querySelector('input').addEventListener('change', function (e) { area.note = e.target.value; save(); render(); });
+    body.appendChild(note);
 
-      var head = el('<div class="row"><input type="text" class="w-emoji a-emoji" value="' + esc(area.emoji) + '" maxlength="3">' +
-        '<input type="text" class="grow a-name" value="' + esc(area.name) + '"></div>');
-      head.querySelector('.a-emoji').addEventListener('change', function (e) { area.emoji = e.target.value; save(); render(); });
-      head.querySelector('.a-name').addEventListener('change', function (e) { area.name = e.target.value; save(); render(); });
-      card.appendChild(head);
-
-      var note = el('<label class="field" style="margin-top:10px"><span>Note to self</span>' +
-        '<input type="text" class="a-note" value="' + esc(area.note || '') + '" placeholder="what is going on here"></label>');
-      note.querySelector('input').addEventListener('change', function (e) { area.note = e.target.value; save(); });
-      card.appendChild(note);
-
-      var hist = el('<label class="field"><span>Background &amp; history — kept off the Today tab, ' +
-        'included in the appointment summary</span>' +
-        '<textarea class="a-history" rows="4" placeholder="injuries, surgeries, dates, what a clinician would want to know"></textarea></label>');
-      hist.querySelector('textarea').value = area.history || '';
-      hist.querySelector('textarea').addEventListener('change', function (e) { area.history = e.target.value; save(); });
-      card.appendChild(hist);
-
-      var sw = el('<div class="swatches" style="margin-bottom:12px"></div>');
-      PALETTE.forEach(function (c) {
-        var b = el('<button class="swatch' + (c === area.color ? ' on' : '') + '" style="background:' + c + '" aria-label="colour"></button>');
-        b.addEventListener('click', function () { area.color = c; save(); render(); });
-        sw.appendChild(b);
-      });
-      card.appendChild(sw);
-
-      card.appendChild(el('<h3 class="section" style="margin-top:4px">Habits · times per week · coins</h3>'));
-      area.actions.forEach(function (act) {
-        var row = el('<div class="row" style="margin-bottom:8px">' +
-          '<input type="text" class="grow x-label" value="' + esc(act.label) + '">' +
-          '<input type="number" class="w-target x-target" min="1" max="7" value="' + act.target + '">' +
-          '<input type="number" class="w-coins x-coins" min="1" max="20" value="' + act.coins + '">' +
-          '<button class="btn ghost x-del" title="remove habit">✕</button></div>');
-        row.querySelector('.x-label').addEventListener('change', function (e) { act.label = e.target.value; save(); });
-        row.querySelector('.x-target').addEventListener('change', function (e) {
-          act.target = Math.max(1, Math.min(7, +e.target.value || 1)); save(); render();
-        });
-        row.querySelector('.x-coins').addEventListener('change', function (e) {
-          act.coins = Math.max(1, +e.target.value || 1); save(); render();
-        });
-        row.querySelector('.x-del').addEventListener('click', function () {
-          if (!confirm('Remove "' + act.label + '"? Past check-ins stay in your history.')) return;
-          S.archive[act.id] = { coins: act.coins };
-          area.actions = area.actions.filter(function (x) { return x.id !== act.id; });
-          save(); render();
-        });
-        card.appendChild(row);
-      });
-
-      var add = el('<div class="row" style="margin-top:10px">' +
-        '<input type="text" class="grow n-label" placeholder="add a habit…">' +
-        '<button class="btn">Add</button></div>');
-      add.querySelector('button').addEventListener('click', function () {
-        var v = add.querySelector('.n-label').value.trim();
-        if (!v) return;
-        area.actions.push({ id: uid(), label: v, coins: 2, target: 5 });
-        save(); render();
-      });
-      card.appendChild(add);
-
-      var met = el('<div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">' +
-        '<h3 class="section" style="margin-top:0">Daily 0–10 ratings</h3></div>');
-      area.metrics.forEach(function (m) {
-        var block = el('<div class="subblock">' +
-          '<div class="row" style="margin-bottom:8px">' +
-          '<input type="text" class="grow m-label" value="' + esc(m.label) + '" placeholder="e.g. tinnitus loudness">' +
-          '<button class="btn ghost m-del" title="remove rating">✕</button></div>' +
-          '<div class="grid2"><label class="field"><span>0 means…</span><input type="text" class="m-low" value="' + esc(m.low || '') + '"></label>' +
-          '<label class="field"><span>10 means…</span><input type="text" class="m-high" value="' + esc(m.high || '') + '"></label></div>' +
-          '<label class="chk"><input type="checkbox" class="m-lower"' + (m.lowerIsBetter ? ' checked' : '') + '> Lower is better</label></div>');
-        block.querySelector('.m-label').addEventListener('change', function (e) { m.label = e.target.value; save(); render(); });
-        block.querySelector('.m-low').addEventListener('change', function (e) { m.low = e.target.value; save(); });
-        block.querySelector('.m-high').addEventListener('change', function (e) { m.high = e.target.value; save(); });
-        block.querySelector('.m-lower').addEventListener('change', function (e) { m.lowerIsBetter = e.target.checked; save(); });
-        block.querySelector('.m-del').addEventListener('click', function () {
-          if (!confirm('Remove the "' + (m.label || 'untitled') + '" rating? Past ratings stay in your history.')) return;
-          area.metrics = area.metrics.filter(function (x) { return x.id !== m.id; });
-          save(); render();
-        });
-        met.appendChild(block);
-      });
-      var addMet = el('<div class="row" style="margin-top:10px">' +
-        '<input type="text" class="grow nm-label" placeholder="add a rating…">' +
-        '<button class="btn">Add</button></div>');
-      addMet.querySelector('button').addEventListener('click', function () {
-        var v = addMet.querySelector('.nm-label').value.trim();
-        if (!v) return;
-        area.metrics.push({ id: uid(), label: v, low: '', high: '', lowerIsBetter: false });
-        save(); render();
-      });
-      met.appendChild(addMet);
-      card.appendChild(met);
-
-      var tagEd = el('<div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">' +
-        '<h3 class="section" style="margin-top:0">Day tags</h3>' +
-        '<p class="muted" style="margin:-4px 0 10px">What a day was like, tapped on the Today tab. Mark a tag as ' +
-        'something you were exposed to, or something that protected you, and Progress compares your ratings across them.</p></div>');
-      area.flags.forEach(function (flag) {
-        var row = el('<div class="row" style="margin-bottom:8px">' +
-          '<input type="text" class="grow f-label" value="' + esc(flag.label) + '">' +
-          '<select class="f-kind">' +
-          '<option value="">plain</option>' +
-          '<option value="exposure"' + (flag.kind === 'exposure' ? ' selected' : '') + '>exposure</option>' +
-          '<option value="protection"' + (flag.kind === 'protection' ? ' selected' : '') + '>protection</option>' +
-          '</select>' +
-          '<button class="btn ghost f-del" title="remove tag">✕</button></div>');
-        row.querySelector('.f-label').addEventListener('change', function (e) { flag.label = e.target.value; save(); });
-        row.querySelector('.f-kind').addEventListener('change', function (e) { flag.kind = e.target.value; save(); render(); });
-        row.querySelector('.f-del').addEventListener('click', function () {
-          if (!confirm('Remove the "' + flag.label + '" tag? Days you already tagged stay in your history.')) return;
-          area.flags = area.flags.filter(function (x) { return x.id !== flag.id; });
-          save(); render();
-        });
-        tagEd.appendChild(row);
-      });
-      var addFlagRow = el('<div class="row" style="margin-top:10px">' +
-        '<input type="text" class="grow nf-label" placeholder="add a day tag…">' +
-        '<button class="btn">Add</button></div>');
-      addFlagRow.querySelector('button').addEventListener('click', function () {
-        var v = addFlagRow.querySelector('.nf-label').value.trim();
-        if (!v) return;
-        area.flags.push({ id: uid(), label: v, kind: '' });
-        save(); render();
-      });
-      tagEd.appendChild(addFlagRow);
-      card.appendChild(tagEd);
-
-      var tools = el('<div class="btnrow"></div>');
-      if (idx > 0) {
-        var up = el('<button class="btn ghost">↑ Move up</button>');
-        up.addEventListener('click', function () {
-          var a = S.areas.splice(idx, 1)[0]; S.areas.splice(idx - 1, 0, a); save(); render();
-        });
-        tools.appendChild(up);
-      }
-      var del = el('<button class="btn ghost">Delete area</button>');
-      del.addEventListener('click', function () {
-        if (!confirm('Delete "' + area.name + '" and its habits?')) return;
-        area.actions.forEach(function (act) { S.archive[act.id] = { coins: act.coins }; });
-        S.areas = S.areas.filter(function (x) { return x.id !== area.id; });
-        save(); render();
-      });
-      tools.appendChild(del);
-      card.appendChild(tools);
-
-      root.appendChild(card);
+    var sw = el('<div class="swatches" style="margin-bottom:12px"></div>');
+    PALETTE.forEach(function (c) {
+      var b = el('<button class="swatch' + (c === area.color ? ' on' : '') + '" style="background:' + c + '" aria-label="colour"></button>');
+      b.addEventListener('click', function () { area.color = c; save(); render(); });
+      sw.appendChild(b);
     });
+    body.appendChild(sw);
 
-    var newArea = el('<div class="card"><div class="card-head"><div><h2>Add an area</h2>' +
-      '<p class="sub">Sleep, back, nutrition, stress — whatever earns a ring.</p></div></div>' +
-      '<div class="row"><input type="text" class="w-emoji na-emoji" value="🌱" maxlength="3">' +
-      '<input type="text" class="grow na-name" placeholder="area name"></div>' +
-      '<div class="btnrow"><button class="btn primary">Add area</button></div></div>');
-    newArea.querySelector('button').addEventListener('click', function () {
-      var name = newArea.querySelector('.na-name').value.trim();
-      if (!name) return;
-      S.areas.push({
-        id: uid(), name: name, emoji: newArea.querySelector('.na-emoji').value || '🌱',
-        color: PALETTE[S.areas.length % PALETTE.length], note: '',
-        metrics: [],
-        flags: [],
-        actions: []
+    body.appendChild(el('<h3 class="section" style="margin-top:4px">Habits · times per week · coins</h3>'));
+    area.actions.forEach(function (act) {
+      var row = el('<div class="row" style="margin-bottom:8px">' +
+        '<input type="text" class="grow x-label" value="' + esc(act.label) + '">' +
+        '<input type="number" class="w-target x-target" min="1" max="7" value="' + act.target + '">' +
+        '<input type="number" class="w-coins x-coins" min="1" max="20" value="' + act.coins + '">' +
+        '<button class="btn ghost x-del" title="remove habit">✕</button></div>');
+      row.querySelector('.x-label').addEventListener('change', function (e) { act.label = e.target.value; save(); });
+      row.querySelector('.x-target').addEventListener('change', function (e) { act.target = Math.max(1, Math.min(7, +e.target.value || 1)); save(); render(); });
+      row.querySelector('.x-coins').addEventListener('change', function (e) { act.coins = Math.max(1, +e.target.value || 1); save(); render(); });
+      row.querySelector('.x-del').addEventListener('click', function () {
+        if (!confirm('Remove "' + act.label + '"? Past check-ins stay in your history.')) return;
+        S.archive[act.id] = { coins: act.coins };
+        area.actions = area.actions.filter(function (x) { return x.id !== act.id; });
+        save(); render();
       });
+      body.appendChild(row);
+    });
+    var addAct = el('<div class="row" style="margin-top:10px">' +
+      '<input type="text" class="grow n-label" placeholder="add a habit…"><button class="btn">Add</button></div>');
+    addAct.querySelector('button').addEventListener('click', function () {
+      var v = addAct.querySelector('.n-label').value.trim();
+      if (!v) return;
+      area.actions.push({ id: uid(), label: v, coins: 2, target: 5 });
       save(); render();
     });
-    root.appendChild(newArea);
+    body.appendChild(addAct);
 
-    var data = el('<div class="card"><div class="card-head"><div><h2>Your data</h2>' +
-      '<p class="sub">Export a copy before you clear site data or switch phones.</p></div></div>' +
+    body.appendChild(el('<h3 class="section">Daily 0–10 ratings</h3>'));
+    area.metrics.forEach(function (m) {
+      var block = el('<div class="subblock">' +
+        '<div class="row" style="margin-bottom:8px">' +
+        '<input type="text" class="grow m-label" value="' + esc(m.label) + '" placeholder="e.g. tinnitus loudness">' +
+        '<button class="btn ghost m-del" title="remove rating">✕</button></div>' +
+        '<div class="grid2"><label class="field"><span>0 means…</span><input type="text" class="m-low" value="' + esc(m.low || '') + '"></label>' +
+        '<label class="field"><span>10 means…</span><input type="text" class="m-high" value="' + esc(m.high || '') + '"></label></div>' +
+        '<label class="chk"><input type="checkbox" class="m-lower"' + (m.lowerIsBetter ? ' checked' : '') + '> Lower is better</label></div>');
+      block.querySelector('.m-label').addEventListener('change', function (e) { m.label = e.target.value; save(); render(); });
+      block.querySelector('.m-low').addEventListener('change', function (e) { m.low = e.target.value; save(); });
+      block.querySelector('.m-high').addEventListener('change', function (e) { m.high = e.target.value; save(); });
+      block.querySelector('.m-lower').addEventListener('change', function (e) { m.lowerIsBetter = e.target.checked; save(); });
+      block.querySelector('.m-del').addEventListener('click', function () {
+        if (!confirm('Remove the "' + (m.label || 'untitled') + '" rating? Past ratings stay in your history.')) return;
+        area.metrics = area.metrics.filter(function (x) { return x.id !== m.id; });
+        save(); render();
+      });
+      body.appendChild(block);
+    });
+    var addMet = el('<div class="row" style="margin-top:10px">' +
+      '<input type="text" class="grow nm-label" placeholder="add a rating…"><button class="btn">Add</button></div>');
+    addMet.querySelector('button').addEventListener('click', function () {
+      var v = addMet.querySelector('.nm-label').value.trim();
+      if (!v) return;
+      area.metrics.push({ id: uid(), label: v, low: '', high: '', lowerIsBetter: false });
+      save(); render();
+    });
+    body.appendChild(addMet);
+
+    body.appendChild(el('<h3 class="section">Day tags</h3>'));
+    body.appendChild(el('<p class="muted" style="margin:-4px 0 10px">What a day was like. Mark one as something you were ' +
+      'exposed to, or something that protected you, and Findings compares your ratings across them.</p>'));
+    area.flags.forEach(function (flag) {
+      var row = el('<div class="row" style="margin-bottom:8px">' +
+        '<input type="text" class="grow f-label" value="' + esc(flag.label) + '">' +
+        '<select class="f-kind"><option value="">plain</option>' +
+        '<option value="exposure"' + (flag.kind === 'exposure' ? ' selected' : '') + '>exposure</option>' +
+        '<option value="protection"' + (flag.kind === 'protection' ? ' selected' : '') + '>protection</option></select>' +
+        '<button class="btn ghost f-del" title="remove tag">✕</button></div>');
+      row.querySelector('.f-label').addEventListener('change', function (e) { flag.label = e.target.value; save(); });
+      row.querySelector('.f-kind').addEventListener('change', function (e) { flag.kind = e.target.value; save(); render(); });
+      row.querySelector('.f-del').addEventListener('click', function () {
+        if (!confirm('Remove the "' + flag.label + '" tag? Days you already tagged stay in your history.')) return;
+        area.flags = area.flags.filter(function (x) { return x.id !== flag.id; });
+        save(); render();
+      });
+      body.appendChild(row);
+    });
+    var addFlagRow = el('<div class="row" style="margin-top:10px">' +
+      '<input type="text" class="grow nf-label" placeholder="add a day tag…"><button class="btn">Add</button></div>');
+    addFlagRow.querySelector('button').addEventListener('click', function () {
+      var v = addFlagRow.querySelector('.nf-label').value.trim();
+      if (!v) return;
+      area.flags.push({ id: uid(), label: v, kind: '' });
+      save(); render();
+    });
+    body.appendChild(addFlagRow);
+
+    var tools = el('<div class="btnrow"></div>');
+    if (idx > 0) {
+      var up = el('<button class="btn ghost">↑ Move earlier</button>');
+      up.addEventListener('click', function () {
+        var a = S.areas.splice(idx, 1)[0]; S.areas.splice(idx - 1, 0, a); save(); render();
+      });
+      tools.appendChild(up);
+    }
+    var del = el('<button class="btn ghost">Delete this profile</button>');
+    del.addEventListener('click', function () {
+      if (!confirm('Delete "' + area.name + '" and its habits?')) return;
+      area.actions.forEach(function (act) { S.archive[act.id] = { coins: act.coins }; });
+      S.areas = S.areas.filter(function (x) { return x.id !== area.id; });
+      save(); go('today');
+    });
+    tools.appendChild(del);
+    body.appendChild(tools);
+
+    return card;
+  }
+
+  /* ----------------------------------------------------------- app and data */
+
+  function appCard() {
+    var card = el('<details class="card setup"><summary>New profile, backups &amp; everything else</summary>' +
+      '<div class="setup-body"></div></details>');
+    var body = card.querySelector('.setup-body');
+
+    body.appendChild(el('<h3 class="section" style="margin-top:0">Add a profile</h3>'));
+    body.appendChild(el('<p class="muted" style="margin:-4px 0 10px">Sleep, back, nutrition, stress — anything you want to understand.</p>'));
+    var na = el('<div class="row"><input type="text" class="w-emoji na-emoji" value="🌱" maxlength="3">' +
+      '<input type="text" class="grow na-name" placeholder="profile name"><button class="btn primary">Add</button></div>');
+    na.querySelector('button').addEventListener('click', function () {
+      var name = na.querySelector('.na-name').value.trim();
+      if (!name) return;
+      var a = {
+        id: uid(), name: name, emoji: na.querySelector('.na-emoji').value || '🌱',
+        color: PALETTE[S.areas.length % PALETTE.length], note: '', history: '',
+        metrics: [], flags: [], actions: []
+      };
+      S.areas.push(a);
+      save(); go('area:' + a.id);
+    });
+    body.appendChild(na);
+
+    body.appendChild(el('<h3 class="section">Everything, as one summary</h3>'));
+    body.appendChild(summaryCard(null));
+
+    body.appendChild(el('<h3 class="section">Your data</h3>'));
+    var data = el('<div><p class="muted" style="margin:0 0 10px">Export a copy before you clear site data or switch phones.</p>' +
       '<div class="btnrow"><button class="btn d-export">Export backup</button>' +
       '<button class="btn d-import">Import backup</button>' +
       '<button class="btn ghost d-reset">Reset everything</button></div>' +
@@ -1487,12 +1607,13 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
       r.readAsText(f);
     });
     data.querySelector('.d-reset').addEventListener('click', function () {
-      if (!confirm('Wipe all areas, history and coins, back to the starting setup?')) return;
-      S = seed(); save(); render();
+      if (!confirm('Wipe all profiles, history and coins, back to the starting setup?')) return;
+      S = migrate(seed()); save(); render();
     });
-    root.appendChild(data);
-  }
+    body.appendChild(data);
 
+    return card;
+  }
 
   /* --------------------------------------------------- sync with your account */
   /* Published as an Artifact, this page can keep the same data on your Claude
@@ -1563,7 +1684,7 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
     }).catch(function () { setSync('local'); });
   }
 
-  /* -------------------------------------------------------------- shell/tabs */
+  /* ------------------------------------------------------------------- shell */
 
   function render() {
     document.getElementById('coinBalance').textContent = balance();
@@ -1571,25 +1692,20 @@ input.w-emoji { width: 52px; flex: none; text-align: center; font-size: 17px; }
       weekday: 'long', month: 'long', day: 'numeric'
     });
 
-    ['today', 'progress', 'invest', 'areas'].forEach(function (v) {
-      document.getElementById('view-' + v).hidden = v !== S.view;
-    });
-    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
-      b.classList.toggle('is-active', b.dataset.view === S.view);
-    });
+    var area = currentArea();
+    if (String(S.view).indexOf('area:') === 0 && !area) S.view = 'today';
 
-    if (S.view === 'today') renderToday();
-    else if (S.view === 'progress') renderProgress();
-    else if (S.view === 'invest') renderInvest();
-    else renderAreas();
+    renderNav();
+
+    var root = document.getElementById('app');
+    root.innerHTML = '';
+    if (area) renderProfile(root, area);
+    else if (S.view === 'coins') renderCoins(root);
+    else renderToday(root);
   }
 
-  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
-    b.addEventListener('click', function () {
-      S.view = b.dataset.view; save(); render();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  });
+  document.querySelector('.brand').addEventListener('click', function () { go('today'); });
+  document.querySelector('.coin-chip').addEventListener('click', function () { go('coins'); });
 
   render();
 })();

@@ -16,31 +16,21 @@
 <body>
 
 <header class="topbar">
-  <div class="brand">
+  <div class="brand" role="button" tabindex="0">
     <span class="brand-mark" aria-hidden="true"></span>
     <div>
       <h1>Growth Rings</h1>
       <p id="dateLine"></p>
     </div>
   </div>
-  <div class="coin-chip" title="Coins available to invest">
+  <div class="coin-chip" role="button" tabindex="0" title="Coins available to invest">
     <span class="coin">◎</span><span id="coinBalance">0</span>
   </div>
 </header>
 
-<nav class="tabs" role="tablist">
-  <button class="tab is-active" data-view="today" role="tab">Today</button>
-  <button class="tab" data-view="progress" role="tab">Progress</button>
-  <button class="tab" data-view="invest" role="tab">Invest</button>
-  <button class="tab" data-view="areas" role="tab">Areas</button>
-</nav>
+<nav class="tabs" id="nav" aria-label="Profiles"></nav>
 
-<main>
-  <section id="view-today" class="view"></section>
-  <section id="view-progress" class="view" hidden></section>
-  <section id="view-invest" class="view" hidden></section>
-  <section id="view-areas" class="view" hidden></section>
-</main>
+<main id="app"></main>
 
 <footer class="foot">
   <p id="storageLine">Everything stays on this device (browser storage). Export a backup from the Areas tab.</p>

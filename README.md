@@ -30,60 +30,47 @@ your data on that device.
 
 ## How it works
 
-**Areas** are the things you want to grow in. It starts with four, taken from
-what you're actually dealing with — ear (pulsatile tinnitus), right knee (ACL),
-shoulder tightness, and teeth. Rename them, delete them, add sleep or nutrition
-or anything else.
+The app is organised by **profile** — one per thing you're working on. The nav
+bar is the list of them: Today, then a chip per profile, then Coins.
 
-**Habits** live inside an area. Each has a target (how many times a week you're
-aiming for) and a coin value (how much it's worth to you). Tap to check one off
-for today.
+**A profile** is everything about one part of you, in one place:
 
-The **Today** tab opens with a summary: the overall ring, then every area's ring
-side by side, so the whole picture reads before you scroll. Tap one to jump to
-that area.
+- **Findings** — what your own entries are saying, written as sentences and
+  updated as you log. *"Hamstring curl machine: tingling down the leg runs 6.2
+  on those days against 2.0 otherwise (5 days vs 18)."*
+- **Background & history** — injuries, surgeries, dates. The context a clinician
+  would want, kept with the data rather than in your head.
+- **Today** — check off habits, tag what the day was like, rate how it feels.
+- **Over time** — habits kept over 14 days, and a sparkline per rating with this
+  week against last.
+- **Recent notes** — your own words.
+- **Take it to an appointment** — all of the above as plain text, copyable or
+  downloadable.
+- **Set up this profile** — collapsed at the bottom: habits, ratings, tags,
+  colour, name.
+
+**Today** is the quick daily pass: the rings up top (tap one to open its
+profile), then every profile's check-ins in one scroll, then a note field.
+
+**Coins** bank as you check habits off, and are spent on real things that move a
+profile forward. It also points at whichever profile is lagging.
 
 **Rings** show rolling 7-day consistency, not "did you do everything today".
-For each habit the ring asks: of your weekly target, how much did you hit? Those
-are averaged, weighted by how much each habit is worth. Miss a day and the ring
-dips slightly instead of resetting to zero — the thing you're measuring is a
-pattern, not a single day.
+For each habit the ring asks: of your weekly target, how much did you hit?
+Those are averaged, weighted by how much each habit is worth. Miss a day and the
+ring dips slightly instead of resetting to zero — the thing you're measuring is
+a pattern, not a single day.
 
-**Coins** accumulate as you check things off. They're a running measure of
-effort banked, and on the Invest tab you spend them on real things that push an
-area forward — new earplugs, a PT session, a dental visit. The same tab points
-at whichever area is lagging, since that's where one extra rep buys the most.
+**Ratings** are the other half: habits are the input, ratings are the output.
+A profile can carry as many as it needs. When today's reading is unusual it says
+so under the slider — *worst in 23 days* — by looking back for the last day that
+was this bad or this good.
 
-**The 0–10 ratings** under each area are the other half of the picture: habits
-are the input, the ratings are the output. Tinnitus loudness, knee confidence,
-knee crunching, shoulder tightness. An area can carry as many as you want. The
-Progress tab puts this week's average against last week's, so you can tell
-whether the work is doing anything.
-
-When today's rating is unusual, it says so under the slider — *worst in 23
-days*, *best in 15 days* — by looking back for the last day that was this bad
-or this good. It stays quiet until there is enough history behind it to mean
-something.
-
-**Day tags** record what a day was like — "loud place", "ear protection with
-me", "on my feet all day" — tapped on the Today tab. Mark a tag as an
-*exposure* (something you were subjected to) or a *protection* (something you
-did about it), and the Progress tab's "Does the day change it?" card compares
-your ratings across them: how much louder the tinnitus runs on loud days, and
-whether having ear protection with you changes that on those same days. It uses
-your whole history, not just the last fortnight, and says how many days each
-side of a comparison stands on so you can tell a signal from a coincidence.
-
-**Take it to an appointment** on the Progress tab writes everything the tracker
-knows as plain text: each area's background and history, every rating with its
-7- and 30-day average and whether today stands out, what you actually did over
-the last fortnight, how many days carry each tag and when they last did, the
-tagged-vs-untagged comparisons, and your recent notes. Copy it or download it as
-a .txt. The point is to walk into an appointment with dates and numbers instead
-of an impression.
-
-**Background & history** lives per area, in the Areas tab. It stays off the
-Today tab so the daily view stays short, and goes into the appointment summary.
+**Day tags** record what a day was like, tapped on Today or on the profile.
+Mark one as an *exposure* (something you were subjected to) or a *protection*
+(something you did about it), and Findings compares your ratings across them,
+including protected vs unprotected days within an exposure. Every comparison
+carries its sample size and stays quiet until it has one worth trusting.
 
 ## Files
 
