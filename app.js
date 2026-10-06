@@ -48,7 +48,7 @@
             { id: 'ham-stretch', label: 'Deep hamstring stretching', kind: 'exposure' }
           ],
           actions: [
-            { id: 'knee5', label: 'Squats (bodyweight or loaded)', coins: 4, target: 3 },
+            { id: 'knee5', label: 'Squats (bodyweight or loaded)', coins: 4, target: 3, watch: true },
             { id: 'knee6', label: 'Ice the hamstring after loading', coins: 2, target: 3 },
             { id: 'knee7', label: 'Trained without pushing into pain or tingling', coins: 2, target: 7 },
             { id: 'knee1', label: 'Quad + hamstring strength set', coins: 4, target: 4 },
@@ -81,6 +81,20 @@
             { id: 'th1', label: 'Brush morning + night', coins: 2, target: 7 },
             { id: 'th2', label: 'Floss', coins: 2, target: 7 },
             { id: 'th3', label: 'Night guard / unclench jaw', coins: 1, target: 7 }
+          ]
+        },
+        {
+          id: 'eat', name: 'Eating well', emoji: '🥗', color: '#a3d977',
+          note: 'Logging in MyFitnessPal keeps me eating enough, and eating well.',
+          history: '',
+          metrics: [
+            { id: 'eat-energy', label: 'Energy through the day', low: 'flat', high: 'steady', lowerIsBetter: false }
+          ],
+          flags: [],
+          actions: [
+            { id: 'eat1', label: 'Logged meals in MyFitnessPal', coins: 2, target: 7, watch: true },
+            { id: 'eat2', label: 'Ate enough (hit my calorie goal)', coins: 3, target: 6 },
+            { id: 'eat3', label: 'Protein at every meal', coins: 2, target: 5 }
           ]
         }
       ],
@@ -171,6 +185,31 @@
             'rotates slightly inward during the contraction, and the movement is felt around',
             'the upper hamstring / sit bone on that side.'
           ].join('\n');
+        }
+      }
+    },
+    {
+      // squatting seems to help the knee, and MyFitnessPal keeps eating on
+      // track — both are now compared against how the days went
+      id: 'squats-help-and-eating',
+      apply: function (st) {
+        var knee = areaById(st, 'knee');
+        if (knee) knee.actions.forEach(function (a) { if (a.id === 'knee5') a.watch = true; });
+        if (!areaById(st, 'eat')) {
+          st.areas.push({
+            id: 'eat', name: 'Eating well', emoji: '🥗', color: '#a3d977',
+            note: 'Logging in MyFitnessPal keeps me eating enough, and eating well.',
+            history: '',
+            metrics: [
+              { id: 'eat-energy', label: 'Energy through the day', low: 'flat', high: 'steady', lowerIsBetter: false }
+            ],
+            flags: [],
+            actions: [
+              { id: 'eat1', label: 'Logged meals in MyFitnessPal', coins: 2, target: 7, watch: true },
+              { id: 'eat2', label: 'Ate enough (hit my calorie goal)', coins: 3, target: 6 },
+              { id: 'eat3', label: 'Protein at every meal', coins: 2, target: 5 }
+            ]
+          });
         }
       }
     }
@@ -420,6 +459,15 @@
               off: ratingAvg(m.id, function (d) { return flagOn(d, f.id) && !flagOn(d, g.id); }),
               onWord: 'with', offWord: 'without'
             });
+          });
+        });
+        // habits you suspect are doing something: ratings on days you did them
+        area.actions.filter(function (a) { return a.watch; }).forEach(function (act) {
+          out.push({
+            area: area, metric: m, name: act.label,
+            on: ratingAvg(m.id, function (d) { return isDone(d, act.id); }),
+            off: ratingAvg(m.id, function (d) { return !isDone(d, act.id); }),
+            onWord: 'on days you did it', offWord: 'otherwise'
           });
         });
       });

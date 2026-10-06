@@ -69,7 +69,9 @@ was this bad or this good.
 **Day tags** record what a day was like, tapped on Today or on the profile.
 Mark one as an *exposure* (something you were subjected to) or a *protection*
 (something you did about it), and Findings compares your ratings across them,
-including protected vs unprotected days within an exposure. Every comparison
+including protected vs unprotected days within an exposure. A habit you suspect
+is doing something (squats for the knee, logging food in MyFitnessPal) is
+compared the same way: ratings on days you did it against days you didn't. Every comparison
 carries its sample size and stays quiet until it has one worth trusting.
 
 ## Files
