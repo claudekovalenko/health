@@ -88,6 +88,11 @@ Rebuild the bundle with `node tools/build-artifact.js` after any change.
 
 ## Your data
 
+The ear and knee background text ships encrypted, because this repository is
+public. The app asks for its password once on each device, then remembers the
+key in that browser's local storage and doesn't ask again. Once unlocked, the
+text is part of your own data like anything you typed.
+
 Everything is under the `growth-rings-v1` key in local storage. The hosted copy
 also mirrors it to a single document on your Claude account, so an edit on your
 phone shows up on your laptop; last write wins. That copy is private to you
@@ -98,6 +103,6 @@ before clearing site data or moving to a new phone.
 ## A note
 
 This is a personal tracker, not medical advice, and nothing here diagnoses
-anything. Pulsatile tinnitus in particular is worth a doctor's attention rather
-than a habit app's. Use it to notice patterns and bring better information to
+anything. Tinnitus in particular is worth a doctor's attention rather than a habit
+app's. Use it to notice patterns and bring better information to
 the people treating you.

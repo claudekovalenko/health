@@ -13,14 +13,16 @@
       version: 1,
       areas: [
         {
-          id: 'ear', name: 'Ear — pulsatile tinnitus', emoji: '👂', color: '#7fd4e8',
+          id: 'ear', name: 'Ear — tinnitus', emoji: '👂', color: '#7fd4e8',
           note: 'Unilateral. Earplugs have been the thing that helps most so far.',
           history: '',
           metrics: [
-            { id: 'ear', label: 'Tinnitus loudness', low: 'quiet', high: 'loud', lowerIsBetter: true }
+            { id: 'ear', label: 'Tinnitus loudness', low: 'quiet', high: 'loud', lowerIsBetter: true },
+            { id: 'ear-itch', label: 'Ear itchiness', low: 'none', high: 'very itchy', lowerIsBetter: true }
           ],
           flags: [
             { id: 'ear-loud', label: 'Loud place (park, concert, bar)', kind: 'exposure' },
+            { id: 'ear-phones', label: 'Headphones on (in-ear or over-ear)', kind: 'exposure' },
             { id: 'ear-plugs', label: 'Ear protection with me', kind: 'protection' }
           ],
           actions: [
@@ -38,10 +40,13 @@
             { id: 'knee', label: 'Knee confidence', low: 'shaky', high: 'solid', lowerIsBetter: false },
             { id: 'knee-crunch', label: 'Knee crunching / grinding', low: 'silent', high: 'loud', lowerIsBetter: true },
             { id: 'ham-sore', label: 'Hamstring soreness', low: 'easy', high: 'sore', lowerIsBetter: true },
-            { id: 'ham-tingle', label: 'Tingling down the leg', low: 'none', high: 'constant', lowerIsBetter: true }
+            { id: 'ham-tingle', label: 'Tingling down the leg', low: 'none', high: 'constant', lowerIsBetter: true },
+            { id: 'knee-swell', label: 'Knee swelling / inflammation', low: 'none', high: 'swollen', lowerIsBetter: true },
+            { id: 'foot-arch', label: 'Right foot / arch discomfort', low: 'none', high: 'sore', lowerIsBetter: true }
           ],
           flags: [
             { id: 'knee-walk', label: 'On my feet all day', kind: 'exposure' },
+            { id: 'walk-long', label: 'Long walk (half a mile or more)', kind: 'exposure' },
             { id: 'leg-heavy', label: 'Heavy leg day (squats, hills, sprint)', kind: 'exposure' },
             { id: 'ham-curl', label: 'Hamstring curl machine', kind: 'exposure' },
             { id: 'sit-long', label: 'Long sitting on a hard seat', kind: 'exposure' },
@@ -167,25 +172,6 @@
         addFlag(knee, { id: 'sit-long', label: 'Long sitting on a hard seat', kind: 'exposure' });
         addFlag(knee, { id: 'ham-stretch', label: 'Deep hamstring stretching', kind: 'exposure' });
         addAction(knee, { id: 'knee7', label: 'Trained without pushing into pain or tingling', coins: 2, target: 7 });
-        if (!knee.history) {
-          knee.history = [
-            'ACL injury and reconstruction in 2013, right knee. Hamstring graft used.',
-            '',
-            'Tingling in the right upper hamstring / glute, around the sit bone (ischial',
-            'tuberosity) where the proximal hamstring attaches. It can radiate down the back',
-            'of the leg into the foot, including the sole. Long-standing, not new.',
-            '',
-            'No significant weakness, no progressive numbness, no bladder or bowel changes.',
-            'Ice on the upper hamstring / sit bone area is relieving.',
-            '',
-            'Provoked recently by the hamstring curl machine — the upper hamstring became',
-            'particularly noticeable with contraction, and one contraction hurt.',
-            '',
-            'Asymmetry: lying down and lifting the leg, the left stays stable while the right',
-            'rotates slightly inward during the contraction, and the movement is felt around',
-            'the upper hamstring / sit bone on that side.'
-          ].join('\n');
-        }
       }
     },
     {
@@ -211,6 +197,26 @@
             ]
           });
         }
+      }
+    },
+    {
+      id: 'ear-headphones-and-ent',
+      apply: function (st) {
+        var ear = areaById(st, 'ear');
+        if (!ear) return;
+        if (ear.name === 'Ear — pulsatile tinnitus') ear.name = 'Ear — tinnitus';
+        addMetric(ear, { id: 'ear-itch', label: 'Ear itchiness', low: 'none', high: 'very itchy', lowerIsBetter: true });
+        addFlag(ear, { id: 'ear-phones', label: 'Headphones on (in-ear or over-ear)', kind: 'exposure' });
+      }
+    },
+    {
+      id: 'knee-history-and-walking',
+      apply: function (st) {
+        var knee = areaById(st, 'knee');
+        if (!knee) return;
+        addMetric(knee, { id: 'knee-swell', label: 'Knee swelling / inflammation', low: 'none', high: 'swollen', lowerIsBetter: true });
+        addMetric(knee, { id: 'foot-arch', label: 'Right foot / arch discomfort', low: 'none', high: 'sore', lowerIsBetter: true });
+        addFlag(knee, { id: 'walk-long', label: 'Long walk (half a mile or more)', kind: 'exposure' });
       }
     }
   ];
@@ -252,6 +258,109 @@
       st.applied.push(u.id);
     });
     return st;
+  }
+
+  /* ------------------------------------------------------- sealed history */
+
+  /* Background text too personal for a public file ships encrypted. The
+     password is asked for once per device; the key it unlocks is kept in
+     local storage, so it is not asked again. Once unlocked, the text lives
+     in your own data like anything you typed. */
+
+  var SEAL_KEY = 'growth-rings-unlock';
+  var SEALED = {
+    salt: 'cg5+21Vpz5F/I8wHrS+LFQ==', iter: 600000,
+    items: [
+      {'id': 'sealed-ear-ent', 'area': 'ear', 'iv': 'OeS6bagNcS5WtVPp', 'ct': 'ftGeloXy66pCDz4o+2n+lorhZ/K1n0fPu9rJx+E3UTxeY86O/vk4Nd+KfdmFfqPj3l9Y6H/x7voRpUljwcQbApaXtl4W+DP88s66oymPSjegclg/t0GdPJxBas+vt0w7JoDFfbyRhjpiXk+1zejA3e8ojVTpvwPQWDgJWTsGQdLdPLM5S1QHY16InTMcEaUf5NGH1VwHEwNut/x8p8+7bSipNPBQLQPOkLatkwEWi0GWTpzKRp7RCAEm0hhmdB3j7A9mldaWuHR8Q+Wwn+UxRnE8gnCvO28yqkPbd0DqALzFhEpffYvFDkb23veUKPIsGrY11GSgbb6xaQyFwx4Sq0/Go1KOFJvzi1PHhgmfQmnEwPfzIuUhsOvlYOIjeRvzPMTtgxDkbNICRBtIQxkc2/MP4HLconzTdaUkg1WR9sYER+mJ4XwavVGBlcUdgsFXodiBVyswqtXY75HnNmB+oSR8aYe00wTEHbZQH6S026HJLWAoDcwaDhQiwxuIhWg4SbnIiwlUQjuTQgNoe+5u/XqGqI3z74f8WP/OkBhqCX0UHdP1Nwonzp6H2z51HOKlfHG3+qiB7AHPO9IVemCu'},
+      {'id': 'sealed-knee-history', 'area': 'knee', 'replaces': 'd5c78335', 'iv': 'cqn1zH1n92f5SiqO', 'ct': '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'}
+    ]
+  };
+  var unsealing = false;
+
+  function fnv(t) {
+    var h = 0x811c9dc5;
+    for (var i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return h.toString(16);
+  }
+  function unb64(str) {
+    var bin = atob(str), u = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    return u;
+  }
+  function tob64(buf) {
+    var u = new Uint8Array(buf), bin = '';
+    for (var i = 0; i < u.length; i++) bin += String.fromCharCode(u[i]);
+    return btoa(bin);
+  }
+  function sealedPending() {
+    return SEALED.items.filter(function (it) { return S.applied.indexOf(it.id) < 0 && areaById(S, it.area); });
+  }
+  function storedSealKey() {
+    try { return localStorage.getItem(SEAL_KEY); } catch (e) { return null; }
+  }
+
+  function keyFromPassword(pw) {
+    var subtle = window.crypto.subtle;
+    return subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']).then(function (base) {
+      return subtle.deriveKey({ name: 'PBKDF2', salt: unb64(SEALED.salt), iterations: SEALED.iter, hash: 'SHA-256' },
+        base, { name: 'AES-GCM', length: 256 }, true, ['decrypt']);
+    });
+  }
+
+  // decrypts everything still pending; rejects if the key is wrong
+  function unseal(key) {
+    var pending = sealedPending();
+    return Promise.all(pending.map(function (it) {
+      return window.crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(it.iv) }, key, unb64(it.ct))
+        .then(function (buf) { return new TextDecoder().decode(buf); });
+    })).then(function (texts) {
+      pending.forEach(function (it, i) {
+        var area = areaById(S, it.area), text = texts[i], h = area.history || '';
+        // an untouched earlier default is replaced; anything you wrote is kept
+        if (!h.trim() || (it.replaces && fnv(h) === it.replaces)) area.history = text;
+        else if (h.indexOf(text) < 0) area.history = h + '\n\n' + text;
+        S.applied.push(it.id);
+      });
+      if (pending.length) { save(); render(); }
+    });
+  }
+
+  function unlockWithPassword(pw) {
+    return keyFromPassword(pw).then(function (key) {
+      return unseal(key).then(function () { return window.crypto.subtle.exportKey('raw', key); });
+    }).then(function (raw) {
+      try { localStorage.setItem(SEAL_KEY, tob64(raw)); } catch (e) { /* asked again next time */ }
+    });
+  }
+
+  // called on every render: a device that already unlocked never asks again
+  function autoUnseal() {
+    var raw = storedSealKey();
+    if (unsealing || !raw || !sealedPending().length || !(window.crypto && window.crypto.subtle)) return;
+    unsealing = true;
+    window.crypto.subtle.importKey('raw', unb64(raw), 'AES-GCM', false, ['decrypt'])
+      .then(unseal)
+      .catch(function () { try { localStorage.removeItem(SEAL_KEY); } catch (e) { /* ignore */ } })
+      .then(function () { unsealing = false; });
+  }
+
+  function unlockCard() {
+    var card = el(
+      '<div class="card"><div class="card-head"><div><h2>Unlock your history</h2>' +
+      '<p class="sub">Your ear and knee background is stored encrypted. Enter the password once on this device.</p>' +
+      '</div></div>' +
+      '<form class="unlock"><input type="password" class="u-pw" autocomplete="current-password" placeholder="password">' +
+      ' <button type="submit" class="btn primary">Unlock</button> <span class="muted u-msg"></span></form></div>'
+    );
+    var form = card.querySelector('form'), msg = card.querySelector('.u-msg');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var pw = card.querySelector('.u-pw').value;
+      if (!pw) return;
+      msg.textContent = 'Unlocking…';
+      unlockWithPassword(pw).catch(function () { msg.textContent = 'That password didn’t work.'; });
+    });
+    return card;
   }
 
   /* ------------------------------------------------------------------- state */
@@ -702,6 +811,8 @@
       hero.appendChild(summary);
     }
     root.appendChild(hero);
+
+    if (sealedPending().length && !storedSealKey() && window.crypto && window.crypto.subtle) root.appendChild(unlockCard());
 
     if (!S.areas.length) {
       root.appendChild(el('<div class="card"><p class="empty">No profiles yet. Add one below.</p></div>'));
@@ -1380,6 +1491,7 @@
     if (area) renderProfile(root, area);
     else if (S.view === 'coins') renderCoins(root);
     else renderToday(root);
+    autoUnseal();
   }
 
   document.querySelector('.brand').addEventListener('click', function () { go('today'); });

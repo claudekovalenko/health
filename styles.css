@@ -257,7 +257,7 @@ button.btn.ghost { background: transparent; color: var(--ink-3); }
 button.btn:disabled { opacity: .45; cursor: not-allowed; }
 .btnrow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 
-input[type=text], input[type=number], textarea, select {
+input[type=text], input[type=password], input[type=number], textarea, select {
   width: 100%; font: inherit; font-size: 14px; color: var(--ink);
   background: var(--bg-2); border: 1px solid var(--line);
   border-radius: 10px; padding: 9px 11px;
@@ -342,3 +342,7 @@ details.setup[open] > summary::after { content: " ⌄"; }
 details.setup > summary:hover { color: var(--ink); }
 .setup-body { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
 .setup-body .card { box-shadow: none; }
+
+/* one-time unlock for the encrypted history */
+.unlock { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.unlock input { flex: 1 1 160px; width: auto; }
