@@ -349,6 +349,15 @@ details.setup > summary:hover { color: var(--ink); }
 /* one-time unlock for the encrypted history */
 .unlock { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .unlock input { flex: 1 1 160px; width: auto; }
+
+/* one-off to-dos */
+.todo-row { display: flex; align-items: stretch; gap: 6px; }
+.todo-row .act { flex: 1; }
+.todo-rm { background: transparent; border: 0; color: var(--ink-3); font-size: 18px; padding: 0 6px; cursor: pointer; }
+.todo-rm:hover { color: var(--ink); }
+.todo-add { margin-top: 10px; }
+.todo-done { margin-top: 10px; color: var(--ink-3); font-size: 13px; }
+.todo-done summary { cursor: pointer; margin-bottom: 6px; }
 </style>
 <header class="topbar">
   <div class="brand" role="button" tabindex="0">
@@ -623,6 +632,7 @@ details.setup > summary:hover { color: var(--ink); }
       }
       delete a.metric;
       if (!a.flags) a.flags = [];
+      if (!a.todos) a.todos = [];
       if (typeof a.history !== 'string') a.history = '';
     });
 
@@ -646,7 +656,12 @@ details.setup > summary:hover { color: var(--ink); }
     salt: 'cg5+21Vpz5F/I8wHrS+LFQ==', iter: 600000,
     items: [
       {'id': 'sealed-ear-ent', 'area': 'ear', 'iv': 'OeS6bagNcS5WtVPp', 'ct': 'ftGeloXy66pCDz4o+2n+lorhZ/K1n0fPu9rJx+E3UTxeY86O/vk4Nd+KfdmFfqPj3l9Y6H/x7voRpUljwcQbApaXtl4W+DP88s66oymPSjegclg/t0GdPJxBas+vt0w7JoDFfbyRhjpiXk+1zejA3e8ojVTpvwPQWDgJWTsGQdLdPLM5S1QHY16InTMcEaUf5NGH1VwHEwNut/x8p8+7bSipNPBQLQPOkLatkwEWi0GWTpzKRp7RCAEm0hhmdB3j7A9mldaWuHR8Q+Wwn+UxRnE8gnCvO28yqkPbd0DqALzFhEpffYvFDkb23veUKPIsGrY11GSgbb6xaQyFwx4Sq0/Go1KOFJvzi1PHhgmfQmnEwPfzIuUhsOvlYOIjeRvzPMTtgxDkbNICRBtIQxkc2/MP4HLconzTdaUkg1WR9sYER+mJ4XwavVGBlcUdgsFXodiBVyswqtXY75HnNmB+oSR8aYe00wTEHbZQH6S026HJLWAoDcwaDhQiwxuIhWg4SbnIiwlUQjuTQgNoe+5u/XqGqI3z74f8WP/OkBhqCX0UHdP1Nwonzp6H2z51HOKlfHG3+qiB7AHPO9IVemCu'},
-      {'id': 'sealed-knee-history', 'area': 'knee', 'replaces': 'd5c78335', 'iv': 'cqn1zH1n92f5SiqO', 'ct': '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'}
+      {'id': 'sealed-knee-history', 'area': 'knee', 'replaces': 'd5c78335', 'iv': 'cqn1zH1n92f5SiqO', 'ct': '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'},
+      {'id': 'sealed-teeth-tooth', 'kind': 'json', 'iv': 'aAZWrUUDtmqvDCjU', 'ct': 'IM23RGSxu2BlyTHj3WYzTprddtrGAeZCHCDZnWQd2tQOSraYPZBuWaicRXtuUgm+HPcXeUNCNxIPnWcUP2DupDJ5euEDziATCO68CDFsQQweOV2GrZ2AHkUZnOShVpmqB4iu/II20S+/ykXY67XP6rcMSLUO/ZGHRo+fQVnC+6E+n6hK/39K7Eo5YrluVsvIwzOaeIz7X2Xm19fS1K/dojr10NDH0lYAfBoLY8kJDJhPHkp0bxe5f5QIOSROWJlA7FacdW4u7jONQaLErWmtMKxPVIQdRwLOwd8WVhzmLiQfjbmRNyMr9vYMRSu0HkHZ0aF/1ioGje8h2mRfR2Hy+GnvWu5Kz4h+jjcXhQCFjXsOcAOHUFmI47nnG9aWHJLL/PICPE2Imvjuuz4s6N/c685LUfBzLBfNK4zR3h+q1SDUziAObz6Tu5sjTItkm3u8p3IhW80Hd0pXiWEPzVSR1od3d0M7FRR2J+uhQsR10EGz2mxIqLMMQa0t3DC5QQlu9Fo9pWxZrIzNoicLlNu2eFOgewyInuz4vvzJGkrJHkEdikj+QaDXpDeo48je5jPAkGtoAKw0doGhjFLHw7PsYEga92W5XiMOxkD7HapS5VQWJOFgbBzAZ+uMWfrXi+y/3LbgUrf6KNBh4ywBxklQc7E0wYgTQvM0c/WKTQ=='},
+      {'id': 'sealed-eyes', 'kind': 'json', 'iv': 'uK+HjW8+q6PFYRRc', 'ct': '0ojV4M9ZLtcnQhnrcJ/58S2VW9yXsPP/WnQaePnzuQ3ocvgWSEdrFcHpUdwT3uYqEUbheIi78k3kpYq3aH0dsLcukq0li3KDaoI6WxdfpmDo8s5jIOQfL/W6842s5OEKbNZGPooouJN8JrK3jI9Yrg38fkXiMbXNN8yvXHkjhiQShhMMF1gXyhNSMWiV29wBNDZ9iN6cvi/xk1IN4pGeWRu5j2aHjqZADPQeVHGKGyTDhZ1vUXwGK3fpr5IjHd2chcLIGJGpKXQn9vbLGmYdyxu33gqmKGFh9odY5TmFIAMPI3ym3HSjhZmvSioPi+tEMzsNxtXDnAo3biWySH2WvTMCJg0l82Ip43cheVWmnD1l37RmFQTJ5hkP5worTxsHKkoGV4IWhmpDHc5b8CGCPFPSUHKAUhw7HwN7950ydqNHK7MveCsjz7z2plK2Gw7s'},
+      {'id': 'sealed-elbow', 'kind': 'json', 'iv': 'LWi03f824xzMmTpQ', 'ct': '+0dbv5VFhnXIZMl46j6A3ZA/jY6jW3Qeu0b3xxuzWapFmMY5MdItGJW2OUe2ExlOgFJxyRK5MFcc+DQKXjGspQmKrYsplsSgepzZfemQSj9sLRzHHjDEYx4mB5E/8Fr5Z57OD9r6ZhcRivN1dlfhwWLKcBs1y4pJwsHrvQep/3dRu6FQCei2fssDMd1sCF6WxhX8ImAWmeTZai7AQ1pnnb5KhU14cC0wTL4J85q74J99JU0yJO10QisakU/gMmT9xj4PzQUw7askJr91GPHZc5P5hTYT1UkGpnUm67RtAd1BFh6MnJI8ZTFItvAvtPxHq8fvfgysf8pvNGS3gd1bj//Auhdsm6tE0cGzpovAtK+QXGW0QGvxp0WNWqp8onuTUJ9PKdvv1XU4beOrwn35wUGQbIMEhGWfVQelrE1Qt4VQN15xL/sg3GI0m89I6a1bGQ/JsUhsSY8n/2ZZH6UkoD8vnRaWcOXe2jTRx/e9GEM8dM8psLVjiB2Mh2cgDpHDryfxSyZATzh/QyQcGN9O1BjzN2wlk3r0768no3Equaph4ZI+xXpkfOnnz1I47DGmNbUYU9u/5zMPtqp4ziqgNkxy95I8t6snnaNrXyn1h5mxCew='},
+      {'id': 'sealed-skin', 'kind': 'json', 'iv': 'lMJJXbm4MBfpmVR2', 'ct': 'PmsRc4CBFkjFvek2Zi90FPfFfMlphLBP8p71p+szUCPzOHkiFF83GYsM3Yf/+z6YgYKHeSjHyPxLA3waZKz0nU73zmDEV9ybvCjuF6WNbYUIVL2rgrvovkhCK6yjG+DUvLUl22NqnnAnQhCgUxYvN4sGvm80nSKHwmBLaVn6nUAFQnVf4unLlYvUlIbV561SKICUdhmqDAST3AMLO4MQkWDnyIP3K+HbV2Xk2+jGfsCoCXMmzdgioDFJlhoVn7w2C/UwvypLlioizimYEYAXHILFQgiRRNh5z+yqIrOv1earSdisJMOPjIPCkNbdPUU9A0glg2nFJyYeY3gOrPm+Wy+5eu+TG9LfWCAG+YTcmumfjsatS/RvYZkRmikhiWfxS2Juxg8dKfFUkk77b30agwcPGHBS1LOre8ULS0GIzTHNQg8iD+4D1U3H+Z8djGxhfYBN0LPomLz/QgWPg35Sf+TU6ne5O9doCoQ1+sDcZyczhPD1RL3I5bt+W29ljY5INBjLFPAeefd/ROdnJnBQh8otrcpp1t/P4TxTdzUzcGjxd9yJ4WBfoq3362TspMfZsMhPByMjM7ix2d1NZ0f2QX6EzEyv7fzzBgA+P8r0IvD41cSwb/NO87uhhk16s4lT'},
+      {'id': 'sealed-personal', 'kind': 'json', 'iv': '4Fltq866hv+9xLpn', 'ct': 'y/w9emFWu4h9qcHNzUhwfv7GDF3pMboIwlHnPVbnYBVplJrUEKMrl/n2OguxsiztAs/8arkdEt8hgVNlf5ZU6JFNaAwEqySnMQUOyVtaqCtxMUPfiDUB2dSk4Qbi2x+ho6fNXqFEQdGJcHu7RL20h7ic3AiFljd6VTwLcvPTHq7hk0sfdeM2b09RqOXA+yzl2cYKnBac65Y6NSQHzqC2F0ZIugIfLWWPuBJHM6Sv2d2ExP9GlKr+I/jbkZrh8oEmvO0Zncu01/cvRaFwl+iqfVU49lSDefyCONcaR855sxXMX5jEag+4If91IFIvhy0uN7lKbi/wNeyZrhupBEY7bwl8eNh95BmPTes25rsQDSchI+1gIWMYhCxir7UgHS80J0Fh7bPheO2b4xQbfMRdEvjfYzs/501z0CCwKUDx+Iq0cjIso2THK7pTawJXUmNw9XSijGdsXfIJaYekIZTeQOW/oXukJRvPQjo9FUFpZhmlYhnlcqcsD64BMFF3dJEEWvX0G/Z/lfwBWiNnLZcVkEpScsFxBxPZ3k7s'}
     ]
   };
   var unsealing = false;
@@ -667,7 +682,9 @@ details.setup > summary:hover { color: var(--ink); }
     return btoa(bin);
   }
   function sealedPending() {
-    return SEALED.items.filter(function (it) { return S.applied.indexOf(it.id) < 0 && areaById(S, it.area); });
+    return SEALED.items.filter(function (it) {
+      return S.applied.indexOf(it.id) < 0 && (it.kind === 'json' || areaById(S, it.area));
+    });
   }
   function storedSealKey() {
     try { return localStorage.getItem(SEAL_KEY); } catch (e) { return null; }
@@ -689,13 +706,41 @@ details.setup > summary:hover { color: var(--ink); }
         .then(function (buf) { return new TextDecoder().decode(buf); });
     })).then(function (texts) {
       pending.forEach(function (it, i) {
-        var area = areaById(S, it.area), text = texts[i], h = area.history || '';
-        // an untouched earlier default is replaced; anything you wrote is kept
-        if (!h.trim() || (it.replaces && fnv(h) === it.replaces)) area.history = text;
-        else if (h.indexOf(text) < 0) area.history = h + '\n\n' + text;
+        if (it.kind === 'json') applySealedJson(it, JSON.parse(texts[i]));
+        else addHistory(areaById(S, it.area), texts[i], it.replaces);
         S.applied.push(it.id);
       });
       if (pending.length) { save(); render(); }
+    });
+  }
+
+  // an untouched earlier default is replaced; anything you wrote is kept
+  function addHistory(area, text, replaces) {
+    if (!area || !text) return;
+    var h = area.history || '';
+    if (!h.trim() || (replaces && fnv(h) === replaces)) area.history = text;
+    else if (h.indexOf(text) < 0) area.history = h + '\n\n' + text;
+  }
+
+  /* A sealed JSON item can add a whole profile, or add history, ratings and
+     to-dos to one you already have. A profile you deleted stays deleted. */
+  function applySealedJson(it, d) {
+    var area = areaById(S, d.area);
+    if (!area && d.addArea) {
+      area = {
+        id: d.area, name: d.addArea.name, emoji: d.addArea.emoji, color: d.addArea.color,
+        note: d.addArea.note || '', history: '', discreet: !!d.addArea.discreet,
+        metrics: [], flags: [], actions: [], todos: []
+      };
+      S.areas.push(area);
+    }
+    if (!area) return;
+    addHistory(area, d.history);
+    (d.metrics || []).forEach(function (m) { addMetric(area, m); });
+    (d.flags || []).forEach(function (f) { addFlag(area, f); });
+    (d.todos || []).forEach(function (label, i) {
+      var id = it.id + '-' + i;
+      if (!hasId(area.todos, id)) area.todos.push({ id: id, label: label, done: false });
     });
   }
 
@@ -721,7 +766,7 @@ details.setup > summary:hover { color: var(--ink); }
   function unlockCard() {
     var card = el(
       '<div class="card"><div class="card-head"><div><h2>Unlock your history</h2>' +
-      '<p class="sub">Your ear and knee background is stored encrypted. Enter the password once on this device.</p>' +
+      '<p class="sub">Some of your profiles are stored encrypted. Enter the password once on this device.</p>' +
       '</div></div>' +
       '<form class="unlock"><input type="password" class="u-pw" autocomplete="current-password" placeholder="password">' +
       ' <button type="submit" class="btn primary">Unlock</button> <span class="muted u-msg"></span></form></div>'
@@ -831,6 +876,9 @@ details.setup > summary:hover { color: var(--ink); }
       num += Math.min(hits(act.id, days), target) / target * weight;
       den += weight;
     });
+    if (!den && area.todos.length) {
+      return area.todos.filter(function (td) { return td.done; }).length / area.todos.length;
+    }
     return den ? num / den : 0;
   }
   function week() { return lastDays(7); }
@@ -855,8 +903,16 @@ details.setup > summary:hover { color: var(--ink); }
     return expected ? Math.min(1.2, earned / expected) : 0;
   }
 
+  var TODO_COINS = 5;
+  function todosDoneOn(dayKey) {
+    var n = 0;
+    S.areas.forEach(function (a) { a.todos.forEach(function (td) { if (td.done && td.doneAt === dayKey) n++; }); });
+    return n;
+  }
+
   function coinsEarned() {
     var total = 0;
+    S.areas.forEach(function (a) { a.todos.forEach(function (td) { if (td.done) total += TODO_COINS; }); });
     Object.keys(S.log).forEach(function (day) {
       Object.keys(S.log[day]).forEach(function (aid) {
         if (S.log[day][aid]) total += coinsFor(aid);
@@ -867,7 +923,7 @@ details.setup > summary:hover { color: var(--ink); }
   function coinsToday() {
     var t = today(), sum = 0;
     Object.keys(S.log[t] || {}).forEach(function (aid) { if (S.log[t][aid]) sum += coinsFor(aid); });
-    return sum;
+    return sum + todosDoneOn(t) * TODO_COINS;
   }
   function balance() { return Math.max(0, coinsEarned() - (S.spent || 0)); }
 
@@ -1143,6 +1199,89 @@ details.setup > summary:hover { color: var(--ink); }
     render();
   }
 
+  /* One-off steps, as opposed to habits: book the consult, call the dentist.
+     Each is worth a few coins once, and stays listed under Done with its date. */
+
+  function newId(prefix) { return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  function toggleTodo(td) {
+    td.done = !td.done;
+    if (td.done) td.doneAt = today(); else delete td.doneAt;
+    save();
+    render();
+  }
+
+  function todoRow(area, td, opts) {
+    var li = el('<li class="todo-row"></li>');
+    var btn = el(
+      '<button class="act' + (td.done ? ' done' : '') + '" type="button">' +
+      '<span class="box">✓</span>' +
+      '<span class="act-label">' + (opts.withArea ? esc(area.emoji) + ' ' : '') + esc(td.label) + '</span>' +
+      '<span class="act-meta">' + (td.done ? esc(td.doneAt || '') : '<b>◎' + TODO_COINS + '</b>') + '</span></button>'
+    );
+    btn.addEventListener('click', function () { toggleTodo(td); });
+    li.appendChild(btn);
+    if (opts.removable) {
+      var rm = el('<button class="todo-rm" type="button" title="Remove">×</button>');
+      rm.addEventListener('click', function () {
+        if (!confirm('Remove "' + td.label + '"?')) return;
+        area.todos = area.todos.filter(function (x) { return x !== td; });
+        save(); render();
+      });
+      li.appendChild(rm);
+    }
+    return li;
+  }
+
+  function todoCard(area) {
+    var open = area.todos.filter(function (td) { return !td.done; });
+    var done = area.todos.filter(function (td) { return td.done; });
+    var card = el('<div class="card"><div class="card-head"><div><h2>To do</h2>' +
+      '<p class="sub">One-off steps that move this forward. Each is worth ◎' + TODO_COINS + ' once.</p></div></div></div>');
+    var list = el('<ul class="actions"></ul>');
+    open.forEach(function (td) { list.appendChild(todoRow(area, td, { removable: true })); });
+    if (!open.length) list.appendChild(el('<li><p class="empty">Nothing open. Add the next step below.</p></li>'));
+    card.appendChild(list);
+
+    var add = el('<form class="row todo-add"><input type="text" placeholder="next step, e.g. book a consult">' +
+      '<button class="btn" type="submit">Add</button></form>');
+    add.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = add.querySelector('input').value.trim();
+      if (!v) return;
+      area.todos.push({ id: newId('td'), label: v, done: false });
+      save(); render();
+    });
+    card.appendChild(add);
+
+    if (done.length) {
+      var det = el('<details class="todo-done"><summary>Done (' + done.length + ')</summary><ul class="actions"></ul></details>');
+      var dl = det.querySelector('ul');
+      done.slice().sort(function (a, b) { return (b.doneAt || '').localeCompare(a.doneAt || ''); })
+        .forEach(function (td) { dl.appendChild(todoRow(area, td, { removable: true })); });
+      card.appendChild(det);
+    }
+    return card;
+  }
+
+  // Today's list of open steps across profiles; a discreet profile keeps its own to itself
+  function nextStepsCard() {
+    var list = el('<ul class="actions"></ul>'), n = 0;
+    S.areas.forEach(function (area) {
+      if (area.discreet) return;
+      area.todos.forEach(function (td) {
+        if (td.done) return;
+        list.appendChild(todoRow(area, td, { withArea: true }));
+        n++;
+      });
+    });
+    if (!n) return null;
+    var card = el('<div class="card"><div class="card-head"><div><h2>Next steps</h2>' +
+      '<p class="sub">Open to-dos from every profile. Add more on each profile’s page.</p></div></div></div>');
+    card.appendChild(list);
+    return card;
+  }
+
   function dayNoteCard() {
     var t = today();
     var note = el(
@@ -1188,6 +1327,9 @@ details.setup > summary:hover { color: var(--ink); }
 
     if (sealedPending().length && !storedSealKey() && window.crypto && window.crypto.subtle) root.appendChild(unlockCard());
 
+    var steps = nextStepsCard();
+    if (steps) root.appendChild(steps);
+
     if (!S.areas.length) {
       root.appendChild(el('<div class="card"><p class="empty">No profiles yet. Add one below.</p></div>'));
     }
@@ -1200,7 +1342,7 @@ details.setup > summary:hover { color: var(--ink); }
         '<span class="muted">profile ›</span></button>');
       head.addEventListener('click', function () { go('area:' + area.id); });
       card.appendChild(head);
-      card.appendChild(logBlock(area, {}));
+      card.appendChild(logBlock(area, { quiet: !area.actions.length }));
       root.appendChild(card);
     });
 
@@ -1270,9 +1412,13 @@ details.setup > summary:hover { color: var(--ink); }
       '<div class="area-top">' + ring(areaScore(area, days), 72, 9, esc(area.color)) +
       '<div class="grow"><h2><span class="emoji">' + esc(area.emoji) + '</span> ' + esc(area.name) + '</h2>' +
       (area.note ? '<p class="sub">' + esc(area.note) + '</p>' : '') +
-      '<p class="sub">' + pct(areaScore(area, days)) + '% consistency over the last 7 days</p>' +
+      '<p class="sub">' + (area.actions.length ? pct(areaScore(area, days)) + '% consistency over the last 7 days'
+        : area.todos.filter(function (td) { return td.done; }).length + ' of ' + area.todos.length + ' to-dos done') + '</p>' +
       '</div></div></div>'
     ));
+
+    /* --- to-dos --- */
+    root.appendChild(todoCard(area));
 
     /* --- findings --- */
     var f = findings(area);
@@ -1410,11 +1556,19 @@ details.setup > summary:hover { color: var(--ink); }
     L.push('Growth Rings — summary prepared ' + t);
     L.push('Self-tracked by the patient. Not a clinical record.');
 
-    S.areas.filter(function (a) { return !only || a.id === only.id; }).forEach(function (area) {
+    S.areas.filter(function (a) { return only ? a.id === only.id : !a.discreet; }).forEach(function (area) {
       L.push('');
       L.push('=== ' + area.name + ' ===');
       if (area.note) L.push(area.note);
       if (area.history) { L.push(''); L.push(area.history); }
+
+      if (area.todos.length) {
+        L.push('');
+        L.push('Next steps');
+        area.todos.forEach(function (td) {
+          L.push('  [' + (td.done ? 'x' : ' ') + '] ' + td.label + (td.done && td.doneAt ? ' (done ' + td.doneAt + ')' : ''));
+        });
+      }
 
       var rated = area.metrics.filter(function (m) { return m.label; });
       if (rated.length) {

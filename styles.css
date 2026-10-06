@@ -346,3 +346,12 @@ details.setup > summary:hover { color: var(--ink); }
 /* one-time unlock for the encrypted history */
 .unlock { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .unlock input { flex: 1 1 160px; width: auto; }
+
+/* one-off to-dos */
+.todo-row { display: flex; align-items: stretch; gap: 6px; }
+.todo-row .act { flex: 1; }
+.todo-rm { background: transparent; border: 0; color: var(--ink-3); font-size: 18px; padding: 0 6px; cursor: pointer; }
+.todo-rm:hover { color: var(--ink); }
+.todo-add { margin-top: 10px; }
+.todo-done { margin-top: 10px; color: var(--ink-3); font-size: 13px; }
+.todo-done summary { cursor: pointer; margin-bottom: 6px; }

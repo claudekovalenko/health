@@ -49,8 +49,13 @@ bar is the list of them: Today, then a chip per profile, then Coins.
 - **Set up this profile** — collapsed at the bottom: habits, ratings, tags,
   colour, name.
 
+- **To do** — one-off next steps (book the consult, call the dentist), first on
+  the page. Each is worth a few coins once and moves to Done with its date. A
+  profile with no habits shows its ring as to-dos done.
+
 **Today** is the quick daily pass: the rings up top (tap one to open its
-profile), then every profile's check-ins in one scroll, then a note field.
+profile), then **Next steps** (every profile's open to-dos), then every
+profile's check-ins in one scroll, then a note field.
 
 **Coins** bank as you check habits off, and are spent on real things that move a
 profile forward. It also points at whichever profile is lagging.
@@ -88,8 +93,8 @@ Rebuild the bundle with `node tools/build-artifact.js` after any change.
 
 ## Your data
 
-The ear and knee background text ships encrypted, because this repository is
-public. The app asks for its password once on each device, then remembers the
+Personal background text, and some whole profiles, ship encrypted, because
+this repository is public. The app asks for its password once on each device, then remembers the
 key in that browser's local storage and doesn't ask again. Once unlocked, the
 text is part of your own data like anything you typed.
 
