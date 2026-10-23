@@ -577,6 +577,43 @@ details.setup > summary:hover { color: var(--ink); }
           ear.history = ear.history ? ear.history + '\n\n' + line : line;
         }
       }
+    },
+    {
+      id: 'whole-right-leg',
+      apply: function (st) {
+        var knee = areaById(st, 'knee');
+        if (!knee) return;
+        // the symptoms run from the sit bone to the sole, so the profile does too
+        if (knee.name === 'Right knee — ACL') knee.name = 'Right leg — knee, calf, foot';
+        addMetric(knee, { id: 'calf-tight', label: 'Deep calf tightness / pressure', low: 'none', high: 'severe', lowerIsBetter: true });
+        addMetric(knee, { id: 'forefoot', label: 'Ball of foot pain (under middle toes)', low: 'none', high: 'severe', lowerIsBetter: true });
+        addMetric(knee, { id: 'sole-warm', label: 'Warm / pooling feeling in the sole', low: 'none', high: 'strong', lowerIsBetter: true });
+        addMetric(knee, { id: 'knee-puffy', label: 'Puffiness beside the kneecap', low: 'none', high: 'very puffy', lowerIsBetter: true });
+        addFlag(knee, { id: 'steps-big', label: 'Big walking day (20k+ steps)', kind: 'exposure' });
+        addFlag(knee, { id: 'rdl', label: 'Romanian deadlifts', kind: 'exposure' });
+        addFlag(knee, { id: 'squat-day', label: 'Squatted today or yesterday', kind: 'protection' });
+        var lines = [
+          'Full write-up (Oct 2026): docs/right-leg-history.md in the app\'s repository.',
+          'Observations, not diagnoses. Key points:',
+          '- Main symptoms are the right calf and sole; the knee usually feels fine while walking.',
+          '- Calf: deep tightness/pressure, a rope-like band ~6 in above the heel, Achilles not tender.',
+          '- Foot: pain under the middle toes at the ball of the foot; separately, a warm,',
+          '  blood-pooling feeling across the sole (subjective; no colour/temperature change confirmed).',
+          '- Sit bone: mild, localised; worse after hamstring curls, possibly the day after RDLs,',
+          '  and with sitting pressure.',
+          '- Knee: suspected re-tear after the 2013 reconstruction; MRI review advised rehab, not',
+          '  surgery. Puffy pockets beside the kneecap, larger on the right, maybe after activity.',
+          '  Crunching in deep squats. No instability or giving way.',
+          '- Very tender hard spot by the inner upper tibia scar, near the fixation hardware.',
+          '- Clinician-confirmed bone spur on the outer lower femur, ~2 in above the kneecap;',
+          '  advised to leave it alone. Not painful in itself.',
+          '- A period of consistent squatting coincided with nearly everything improving.',
+          '- Walks 15-30k steps a day; symptoms don\'t track step count. Mornings are mostly clear.'
+        ].join('\n');
+        if (knee.history.indexOf('docs/right-leg-history.md') < 0) {
+          knee.history = knee.history ? knee.history + '\n\n' + lines : lines;
+        }
+      }
     }
   ];
 
