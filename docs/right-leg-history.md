@@ -1,6 +1,6 @@
 # Comprehensive Right-Leg Symptom History and Investigation
 
-*Written October 2026. Kept as written; the app's leg profile carries a short
+*Put together with ChatGPT, October 2026. Kept as written; the app's leg profile carries a short
 version of it.*
 
 **Purpose:** Preserve a detailed, neutral record of my symptoms, orthopedic history, prior medical opinions, exercise patterns, and observations for future medical discussions and AI-assisted analysis.
