@@ -190,6 +190,23 @@
           ear.history = ear.history ? ear.history + '\n\n' + line : line;
         }
       }
+    },
+    {
+      id: 'tensor-tympani-plan',
+      apply: function (st) {
+        var ear = areaById(st, 'ear');
+        if (!ear) return;
+        addInvestment(st, { id: 'i5', name: 'Custom-fit high-fidelity earplugs (audiologist moulded)', cost: 600, areaId: 'ear', done: false });
+        addInvestment(st, { id: 'i6', name: 'Hearing exam: audiogram, tympanometry + acoustic reflex', cost: 500, areaId: 'ear', done: false });
+        var line = [
+          'Working theory: tensor tympani / middle ear muscle sensitivity, likely noise',
+          'induced. Not confirmed yet. Plan: custom high-fidelity earplugs for loud places,',
+          'and a hearing exam with tympanometry and acoustic reflex testing.'
+        ].join('\n');
+        if (ear.history.indexOf('Working theory: tensor tympani') < 0) {
+          ear.history = ear.history ? ear.history + '\n\n' + line : line;
+        }
+      }
     }
   ];
 
@@ -200,6 +217,7 @@
     return list.some(function (x) { return x.id === id; });
   }
   function addFlag(area, flag) { if (!hasId(area.flags, flag.id)) area.flags.push(flag); }
+  function addInvestment(st, inv) { if (!hasId(st.investments, inv.id)) st.investments.push(inv); }
   function addMetric(area, m) { if (!hasId(area.metrics, m.id)) area.metrics.push(m); }
   function addAction(area, act, at) {
     if (hasId(area.actions, act.id)) return;
