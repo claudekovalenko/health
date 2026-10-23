@@ -384,7 +384,7 @@ details.setup > summary:hover { color: var(--ink); }
       areas: [
         {
           id: 'ear', name: 'Ear — pulsatile tinnitus', emoji: '👂', color: '#7fd4e8',
-          note: 'Unilateral. Earplugs have been the thing that helps most so far.',
+          note: 'Unilateral (left). Earplugs have been the thing that helps most so far.',
           history: '',
           metrics: [
             { id: 'ear', label: 'Tinnitus loudness', low: 'quiet', high: 'loud', lowerIsBetter: true }
@@ -541,6 +541,23 @@ details.setup > summary:hover { color: var(--ink); }
             'rotates slightly inward during the contraction, and the movement is felt around',
             'the upper hamstring / sit bone on that side.'
           ].join('\n');
+        }
+      }
+    },
+    {
+      id: 'sound-triggered-thump',
+      apply: function (st) {
+        var ear = areaById(st, 'ear');
+        if (!ear) return;
+        addMetric(ear, { id: 'ear-thump', label: 'Thump in the ear from a sound', low: 'none', high: 'every time', lowerIsBetter: true });
+        addFlag(ear, { id: 'ear-clink', label: 'Sharp sounds (clinking glass, cutlery, dishes)', kind: 'exposure' });
+        var line = [
+          'Left ear only. Tapping a fork on the side of a glass food container (IKEA)',
+          'sets off a thump inside the left ear, right as the tap lands. It happens at',
+          'that particular pitch. The right ear does not do it.'
+        ].join('\n');
+        if (ear.history.indexOf('fork on the side of a glass') < 0) {
+          ear.history = ear.history ? ear.history + '\n\n' + line : line;
         }
       }
     }
