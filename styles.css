@@ -88,7 +88,8 @@ main { padding: 0 16px; }
 
 /* ---------- tabs ---------- */
 .tabs {
-  display: flex; gap: 6px; padding: 4px; margin: 0 16px 16px;
+  display: flex; gap: 6px; padding: 4px;
+  width: calc(100% - 32px); max-width: 628px; margin: 0 auto 16px;
   background: var(--card); border: 1px solid var(--line); border-radius: 999px;
   overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
@@ -115,7 +116,7 @@ h3.section { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; 
 /* ---------- hero ---------- */
 .hero { display: flex; align-items: center; gap: 18px; }
 .hero-stats { flex: 1; min-width: 0; }
-.hero-stats .big { font-family: var(--font-display); font-size: 29px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; }
+.hero-stats .big { font-family: var(--font-display); font-size: clamp(21px, 6vw, 29px); font-weight: 600; letter-spacing: -.02em; line-height: 1.15; }
 .hero-stats .label { font-size: 12px; color: var(--ink-3); }
 .pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .pill {
@@ -128,8 +129,9 @@ h3.section { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; 
 /* ---------- summary strip ---------- */
 .summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
-  gap: 10px 4px;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
   margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid var(--line);
@@ -403,3 +405,27 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
 .path .reached .ms-label { color: var(--ink-2); }
 .path .is-next .ms-label { font-weight: 650; }
 .path .when { font-size: 11.5px; color: var(--ink-3); }
+
+/* phones: summary rings shrink so every area fits on one row */
+@media (max-width: 480px) {
+  .hero { gap: 14px; }
+  .sum-name { font-size: 10.5px; }
+  .summary .ring-wrap { width: 46px !important; height: 46px !important; }
+  .summary .ring-wrap svg { width: 46px; height: 46px; }
+  .summary .pct { font-size: 11px; }
+}
+
+/* ---------- graphics ---------- */
+.flower { flex: none; overflow: visible; }
+.flower-pct { font: 650 11px var(--font-body); fill: var(--ink); }
+.flower-key { margin: 10px 0 0; font-size: 11.5px; color: var(--ink-3); }
+.trail, .feelchart { display: block; width: 100%; max-width: 480px; height: auto; overflow: visible; }
+.trail-txt { font: 600 10px var(--font-body); fill: var(--ink-3); }
+.trail-txt.you { fill: var(--ink); }
+.vision { margin: 8px 0 0; font-family: var(--font-display); font-size: 15px; line-height: 1.5; color: var(--ink); }
+@media (max-width: 480px) {
+  .flower { width: 104px; height: 104px; }
+}
+
+.top-right { display: flex; align-items: center; gap: 8px; }
+.install-btn { border-radius: 999px; padding: 7px 14px; }

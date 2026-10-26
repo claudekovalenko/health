@@ -45,6 +45,15 @@ bar is the list of them: Today, then a chip per profile, then Coins.
 - **Over time**, **Recent notes**, **Take it to an appointment**, and
   **Set up this profile** (goal, milestones, moves, ratings, tags).
 
+**Graphs.** Today opens with a flower — one petal per area, growing as you reach
+milestones — and a *Your progress* card: moves per week, how you've felt across
+every area week by week, and the milestones you've reached. Each area's page
+draws its path from start to healthy, and a 30-day chart of its daily faces.
+
+**Install it.** From the website it installs as an app and works offline: the
+Install button (Chrome/Edge), File › Add to Dock (Safari on a Mac), or Share ›
+Add to Home Screen (iPhone).
+
 **Moves** replace the old checklist. Each area suggests one move a day — the one
 furthest behind its weekly aim — with the rest a tap away. A move can count in
 two areas: a lower-body session in Strength also counts as squats for the leg,

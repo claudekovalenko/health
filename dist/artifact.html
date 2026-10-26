@@ -91,7 +91,8 @@ main { padding: 0 16px; }
 
 /* ---------- tabs ---------- */
 .tabs {
-  display: flex; gap: 6px; padding: 4px; margin: 0 16px 16px;
+  display: flex; gap: 6px; padding: 4px;
+  width: calc(100% - 32px); max-width: 628px; margin: 0 auto 16px;
   background: var(--card); border: 1px solid var(--line); border-radius: 999px;
   overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
@@ -118,7 +119,7 @@ h3.section { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; 
 /* ---------- hero ---------- */
 .hero { display: flex; align-items: center; gap: 18px; }
 .hero-stats { flex: 1; min-width: 0; }
-.hero-stats .big { font-family: var(--font-display); font-size: 29px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; }
+.hero-stats .big { font-family: var(--font-display); font-size: clamp(21px, 6vw, 29px); font-weight: 600; letter-spacing: -.02em; line-height: 1.15; }
 .hero-stats .label { font-size: 12px; color: var(--ink-3); }
 .pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .pill {
@@ -131,8 +132,9 @@ h3.section { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; 
 /* ---------- summary strip ---------- */
 .summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
-  gap: 10px 4px;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
   margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid var(--line);
@@ -406,6 +408,30 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
 .path .reached .ms-label { color: var(--ink-2); }
 .path .is-next .ms-label { font-weight: 650; }
 .path .when { font-size: 11.5px; color: var(--ink-3); }
+
+/* phones: summary rings shrink so every area fits on one row */
+@media (max-width: 480px) {
+  .hero { gap: 14px; }
+  .sum-name { font-size: 10.5px; }
+  .summary .ring-wrap { width: 46px !important; height: 46px !important; }
+  .summary .ring-wrap svg { width: 46px; height: 46px; }
+  .summary .pct { font-size: 11px; }
+}
+
+/* ---------- graphics ---------- */
+.flower { flex: none; overflow: visible; }
+.flower-pct { font: 650 11px var(--font-body); fill: var(--ink); }
+.flower-key { margin: 10px 0 0; font-size: 11.5px; color: var(--ink-3); }
+.trail, .feelchart { display: block; width: 100%; max-width: 480px; height: auto; overflow: visible; }
+.trail-txt { font: 600 10px var(--font-body); fill: var(--ink-3); }
+.trail-txt.you { fill: var(--ink); }
+.vision { margin: 8px 0 0; font-family: var(--font-display); font-size: 15px; line-height: 1.5; color: var(--ink); }
+@media (max-width: 480px) {
+  .flower { width: 104px; height: 104px; }
+}
+
+.top-right { display: flex; align-items: center; gap: 8px; }
+.install-btn { border-radius: 999px; padding: 7px 14px; }
 </style>
 <header class="topbar">
   <div class="brand" role="button" tabindex="0">
@@ -415,8 +441,11 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
       <p id="dateLine"></p>
     </div>
   </div>
+  <div class="top-right">
+  <span id="installSlot"></span>
   <div class="coin-chip" role="button" tabindex="0" title="Coins available to invest">
     <span class="coin">◎</span><span id="coinBalance">0</span>
+  </div>
   </div>
 </header>
 
@@ -425,7 +454,7 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
 <main id="app"></main>
 
 <footer class="foot">
-  <p id="storageLine">Everything stays on this device (browser storage). Export a backup from the Areas tab.</p>
+  <p id="storageLine">Everything stays on this device (browser storage). Export a backup from the bottom of Today.</p>
   <p class="fine">A personal tracker, not medical advice. Decisions about your ear, leg, shoulder, teeth or training belong with your clinicians.</p>
 </footer>
 <script>
@@ -742,6 +771,50 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
           });
         }
       }
+    },
+    {
+      id: 'visions',
+      apply: function (st) {
+        var v = {
+          ear: 'Quiet days where I forget about my ear. Loud places with good earplugs and no flare afterwards. Everyday sounds without the thump.',
+          knee: 'Walking 20k+ steps in ordinary shoes with calm calves and feet. Squatting deep without worry. Back playing sport, trusting the leg.',
+          strength: 'Lifting three times a week, strong and even on both sides — the base that carries the leg, the shoulder and everything else.',
+          shoulder: 'Shoulders that feel loose and easy all day, with full reach overhead and no tightness.',
+          teeth: 'A comfortable mouth, healthy gums, no clenching, and check-ups that are routine.'
+        };
+        Object.keys(v).forEach(function (id) {
+          var a = areaById(st, id);
+          if (a && !a.vision) a.vision = v[id];
+        });
+      }
+    },
+    {
+      // asked for by how the day of eating felt, not by counting anything
+      id: 'diet',
+      apply: function (st) {
+        if (areaById(st, 'diet')) return;
+        var strength = areaById(st, 'strength');
+        var at = strength ? st.areas.indexOf(strength) + 1 : st.areas.length;
+        st.areas.splice(at, 0, {
+          id: 'diet', name: 'Diet', emoji: '🥗', color: '#a3d977',
+          note: 'Still figuring out what good looks like here.',
+          goal: 'Toward eating in a way I feel good about',
+          feelPrompt: 'Happy with how you ate today?',
+          vision: 'Eating in a way that fuels training and recovery, that I feel good about at the end of the day, without overthinking it.',
+          history: '', metrics: [], flags: [],
+          milestones: [
+            { id: 'diet-m0', label: 'Know what a good eating day looks like for me', done: false },
+            { id: 'diet-m1', label: 'Happy with how I ate 4 days in a week', done: false },
+            { id: 'diet-m2', label: 'Two good weeks in a row', done: false }
+          ],
+          actions: [
+            { id: 'd1', label: 'A proper meal I chose on purpose', coins: 2, target: 5 },
+            { id: 'd2', label: 'Vegetables or fruit with two meals', coins: 2, target: 5 },
+            { id: 'd3', label: 'Enough protein (counts for strength too)', coins: 2, target: 5, links: ['st3'] },
+            { id: 'd4', label: 'Plenty of water', coins: 1, target: 5 }
+          ]
+        });
+      }
     }
   ];
 
@@ -777,6 +850,7 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
       if (typeof a.history !== 'string') a.history = '';
       if (typeof a.goal !== 'string') a.goal = '';
       if (!a.milestones) a.milestones = [];
+      if (typeof a.vision !== 'string') a.vision = '';
     });
 
     UPGRADES.forEach(function (u) {
@@ -1050,7 +1124,7 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
       '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">' +
       '<circle class="ring-track" cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke-width="' + stroke + '"/>' +
       '<circle class="ring-bar" cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="' + color + '"' +
-      ' stroke-width="' + stroke + '" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + '"' +
+      ' stroke-width="' + stroke + '" stroke-linecap="' + (v < 0.05 ? 'butt' : 'round') + '" stroke-dasharray="' + c.toFixed(1) + '"' +
       ' stroke-dashoffset="' + (c * (1 - v)).toFixed(1) + '" transform="rotate(-90 ' + size / 2 + ' ' + size / 2 + ')"/>' +
       '</svg>' +
       '<div class="ring-label"><div class="pct' + (size < 90 ? ' sm' : '') + '">' + pct(value) + '<span style="font-size:.6em">%</span></div></div>' +
@@ -1190,7 +1264,7 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
 
   function feelRow(area) {
     var t = today(), id = feelMetric(area).id;
-    var wrap = el('<div class="feel"><div class="kicker">How is it today?</div><div class="faces"></div></div>');
+    var wrap = el('<div class="feel"><div class="kicker">' + esc(area.feelPrompt || 'How is it today?') + '</div><div class="faces"></div></div>');
     var row = wrap.querySelector('.faces');
     FACES.forEach(function (f) {
       var on = (S.metrics[t] || {})[id] === f.v;
@@ -1252,6 +1326,225 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
       }
     }
     return wrap;
+  }
+
+  /* -------------------------------------------------------------- graphics */
+
+  function progressOf(area) {
+    return area.milestones.length ? reachedCount(area) / area.milestones.length : 0;
+  }
+
+  /* One petal per area: the outline is the destination, the fill is how far
+     along its path you are. The emoji at the tip names it, so colour is never
+     the only thing telling the petals apart. */
+  function healthFlower() {
+    var size = 132, c = size / 2, R = 44, n = Math.max(1, S.areas.length);
+    var reached = 0, total = 0;
+    S.areas.forEach(function (a) { reached += reachedCount(a); total += a.milestones.length; });
+    var out = '<svg class="flower" width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" role="img"' +
+      ' aria-label="Progress toward health: ' + reached + ' of ' + total + ' milestones">';
+    S.areas.forEach(function (a, i) {
+      var deg = i * 360 / n, p = progressOf(a);
+      var L = R * (0.18 + 0.82 * p), w = Math.min(13, 55 / n);
+      var tr = 'translate(' + c + ' ' + c + ') rotate(' + deg + ')';
+      out += '<g transform="' + tr + '"><title>' + esc(shortName(a.name)) + ': ' + reachedCount(a) + ' of ' + a.milestones.length + ' milestones</title>' +
+        '<ellipse cx="0" cy="' + (-R / 2) + '" rx="' + w + '" ry="' + (R / 2) + '" fill="' + esc(a.color) + '" fill-opacity=".1" stroke="' + esc(a.color) + '" stroke-opacity=".45" stroke-width="1"/>' +
+        '<ellipse cx="0" cy="' + (-L / 2) + '" rx="' + (w * (0.55 + 0.45 * p)) + '" ry="' + (L / 2) + '" fill="' + esc(a.color) + '"/></g>';
+      var rad = (deg - 90) * Math.PI / 180, er = R + 10;
+      out += '<text x="' + (c + er * Math.cos(rad)).toFixed(1) + '" y="' + (c + er * Math.sin(rad) + 4).toFixed(1) + '" font-size="12" text-anchor="middle">' + esc(a.emoji) + '</text>';
+    });
+    out += '<circle cx="' + c + '" cy="' + c + '" r="15" fill="var(--card)" stroke="var(--line)"/>' +
+      '<text x="' + c + '" y="' + (c + 4) + '" text-anchor="middle" class="flower-pct">' + (total ? Math.round(reached / total * 100) : 0) + '%</text></svg>';
+    return out;
+  }
+
+  // a cubic curve sampled by length, so milestones sit evenly along the trail
+  function trailPoints(n) {
+    var P = [[14, 74], [120, 92], [170, 14], [306, 26]], pts = [], len = [0];
+    for (var i = 0; i <= 200; i++) {
+      var t = i / 200, u = 1 - t;
+      pts.push([
+        u * u * u * P[0][0] + 3 * u * u * t * P[1][0] + 3 * u * t * t * P[2][0] + t * t * t * P[3][0],
+        u * u * u * P[0][1] + 3 * u * u * t * P[1][1] + 3 * u * t * t * P[2][1] + t * t * t * P[3][1]
+      ]);
+      if (i) len.push(len[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    }
+    var at = function (f) {
+      var target = f * len[200];
+      for (var j = 1; j <= 200; j++) if (len[j] >= target) return pts[j];
+      return pts[200];
+    };
+    return { d: 'M' + P[0] + ' C' + P[1] + ' ' + P[2] + ' ' + P[3], at: at, n: n };
+  }
+
+  function trailGraphic(area) {
+    var n = area.milestones.length, tp = trailPoints(n), k = reachedCount(area);
+    var you = n ? k / (n + 1) : 0;
+    var out = '<svg class="trail" viewBox="0 0 320 112" role="img" aria-label="' + k + ' of ' + n + ' milestones reached on the way to healthy">' +
+      '<path d="' + tp.d + '" fill="none" stroke="var(--line)" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 8"/>' +
+      '<path d="' + tp.d + '" fill="none" stroke="' + esc(area.color) + '" stroke-width="4" stroke-linecap="round" pathLength="100"' +
+      ' stroke-dasharray="' + (you * 100).toFixed(1) + ' 200"/>';
+    area.milestones.forEach(function (m, i) {
+      var p = tp.at((i + 1) / (n + 1));
+      out += '<g><title>' + esc(m.label) + (m.done ? ' — reached' : '') + '</title>' +
+        '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="10" fill="transparent"/>' +
+        (m.done
+          ? '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="6" stroke="var(--card)" stroke-width="2" fill="' + esc(area.color) + '"/>'
+          : '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="5" stroke="var(--ink-3)" stroke-width="2" fill="var(--card)"/>') + '</g>';
+    });
+    var y = tp.at(you), end = tp.at(1);
+    out += '<text x="' + (end[0] - 4) + '" y="' + (end[1] - 8) + '" font-size="18" text-anchor="middle">🏁</text>' +
+      '<text x="306" y="52" text-anchor="end" class="trail-txt">healthy</text>' +
+      '<text x="14" y="98" class="trail-txt">start</text>' +
+      '<circle cx="' + y[0].toFixed(1) + '" cy="' + y[1].toFixed(1) + '" r="8" fill="' + esc(area.color) + '" stroke="var(--card)" stroke-width="2"/>' +
+      '<text x="' + y[0].toFixed(1) + '" y="' + (y[1] - 13).toFixed(1) + '" text-anchor="middle" class="trail-txt you">you</text></svg>';
+    return out;
+  }
+
+  /* weekly buckets, oldest first: week 0 is the last seven days */
+  function weeksBack(n) {
+    var out = [];
+    for (var i = n - 1; i >= 0; i--) out.push(lastDays(7, 7 * i));
+    return out;
+  }
+  function weekLabel(days) { return i18nShort(days[0]); }
+  function i18nShort(k) {
+    var p = k.split('-');
+    return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  function movesChart(weeks) {
+    var vals = weeks.map(function (w) {
+      return w.reduce(function (n, d) { return n + Object.keys(S.log[d] || {}).filter(function (k) { return S.log[d][k]; }).length; }, 0);
+    });
+    var max = Math.max(4, Math.max.apply(null, vals));
+    var W = 320, H = 116, x0 = 20, x1 = 316, top = 14, base = 92, slot = (x1 - x0) / vals.length, bw = Math.min(24, slot - 8);
+    var y = function (v) { return base - v / max * (base - top); };
+    var tick = Math.ceil(max / 2);
+    var out = '<svg class="feelchart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Moves per week, last ' + vals.length + ' weeks">';
+    [0, tick, tick * 2].forEach(function (t) {
+      if (t > max) return;
+      out += '<line x1="' + x0 + '" x2="' + x1 + '" y1="' + y(t) + '" y2="' + y(t) + '" stroke="var(--line)"/>' +
+        '<text x="0" y="' + (y(t) + 3) + '" class="trail-txt">' + t + '</text>';
+    });
+    vals.forEach(function (v, i) {
+      var cx = x0 + slot * i + slot / 2, xl = cx - bw / 2, yt = y(v), r = Math.min(4, bw / 2);
+      out += '<g><title>Week of ' + weekLabel(weeks[i]) + ': ' + v + ' move' + (v === 1 ? '' : 's') + '</title>' +
+        '<rect x="' + (cx - slot / 2) + '" y="' + top + '" width="' + slot + '" height="' + (base - top) + '" fill="transparent"/>';
+      if (v > 0) out += '<path d="M' + xl + ' ' + base + ' V' + (yt + r) + ' Q' + xl + ' ' + yt + ' ' + (xl + r) + ' ' + yt +
+        ' H' + (xl + bw - r) + ' Q' + (xl + bw) + ' ' + yt + ' ' + (xl + bw) + ' ' + (yt + r) + ' V' + base + ' Z" fill="var(--accent)"/>';
+      out += '</g>';
+      if (i === vals.length - 1 || i === 0) {
+        out += '<text x="' + cx + '" y="' + (H - 6) + '" text-anchor="middle" class="trail-txt">' + (i === vals.length - 1 ? 'this week' : weekLabel(weeks[i])) + '</text>';
+      }
+    });
+    var last = vals[vals.length - 1];
+    if (last > 0) {
+      var lx = x0 + slot * (vals.length - 1) + slot / 2;
+      out += '<text x="' + lx + '" y="' + (y(last) - 5) + '" text-anchor="middle" class="trail-txt you">' + last + '</text>';
+    }
+    return out + '<line x1="' + x0 + '" x2="' + x1 + '" y1="' + base + '" y2="' + base + '" stroke="var(--line)"/></svg>';
+  }
+
+  function feelTrendChart(weeks) {
+    var vals = weeks.map(function (w) {
+      var all = [];
+      w.forEach(function (d) {
+        S.areas.forEach(function (a) {
+          var v = (S.metrics[d] || {})[feelMetric(a).id];
+          if (typeof v === 'number') all.push(v);
+        });
+      });
+      return all.length ? all.reduce(function (x, y) { return x + y; }, 0) / all.length : null;
+    });
+    var W = 320, H = 116, x0 = 24, x1 = 310, top = 10, base = 92, step = (x1 - x0) / Math.max(1, vals.length - 1);
+    var y = function (v) { return base - (v / 10) * (base - top); };
+    var out = '<svg class="feelchart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Average feel across every area, by week">';
+    FACES.forEach(function (f) {
+      out += '<line x1="' + x0 + '" x2="' + x1 + '" y1="' + y(f.v) + '" y2="' + y(f.v) + '" stroke="var(--line)"/>' +
+        '<text x="0" y="' + (y(f.v) + 4) + '" font-size="11">' + f.e + '</text>';
+    });
+    var seg = '', any = false;
+    vals.forEach(function (v, i) {
+      if (v == null) return;
+      seg += (seg ? ' L' : 'M') + (x0 + step * i).toFixed(1) + ' ' + y(v).toFixed(1);
+    });
+    if (seg) out += '<path d="' + seg + '" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    vals.forEach(function (v, i) {
+      var cx = x0 + step * i;
+      out += '<g><title>Week of ' + weekLabel(weeks[i]) + ': ' + (v == null ? 'no check-ins' : faceFor(v).e + ' ' + v.toFixed(1) + ' of 10') + '</title>' +
+        '<rect x="' + (cx - step / 2) + '" y="' + top + '" width="' + step + '" height="' + (base - top) + '" fill="transparent"/>';
+      if (v != null) { any = true; out += '<circle cx="' + cx + '" cy="' + y(v) + '" r="4" fill="var(--accent)" stroke="var(--card)" stroke-width="2"/>'; }
+      out += '</g>';
+    });
+    out += '<text x="' + x0 + '" y="' + (H - 6) + '" class="trail-txt">' + weekLabel(weeks[0]) + '</text>' +
+      '<text x="' + x1 + '" y="' + (H - 6) + '" text-anchor="end" class="trail-txt">this week</text></svg>';
+    if (!any) out = '<div>' + out + '<p class="muted" style="margin:6px 0 0">Tap a face for each area and this line starts to draw.</p></div>';
+    return out;
+  }
+
+  function progressCard() {
+    var weeks = weeksBack(8);
+    var card = el('<div class="card"><div class="card-head"><div><h2>Your progress</h2>' +
+      '<p class="sub">The last 8 weeks. Hover or tap a week for its number.</p></div></div>' +
+      '<div class="kicker">Moves made, per week</div></div>');
+    card.appendChild(el(movesChart(weeks)));
+    card.appendChild(el('<div class="kicker" style="margin-top:16px">How you’ve felt, across every area</div>'));
+    card.appendChild(el(feelTrendChart(weeks)));
+
+    var done = [];
+    S.areas.forEach(function (a) {
+      a.milestones.forEach(function (m) { if (m.done) done.push({ a: a, m: m }); });
+    });
+    done.sort(function (x, y) { return String(y.m.doneAt || '').localeCompare(String(x.m.doneAt || '')); });
+    card.appendChild(el('<div class="kicker" style="margin-top:16px">Milestones reached</div>'));
+    if (done.length) {
+      done.slice(0, 5).forEach(function (x) {
+        card.appendChild(el('<div class="finding"><span class="tone" style="background:' + esc(x.a.color) + '"></span>' +
+          '<span>' + esc(x.a.emoji) + ' ' + esc(x.m.label) + (x.m.doneAt ? ' <span class="muted">· ' + esc(i18nShort(x.m.doneAt)) + '</span>' : '') + '</span></div>'));
+      });
+    } else {
+      card.appendChild(el('<p class="muted" style="margin:0">None yet. Open an area and tap a milestone when you reach it.</p>'));
+    }
+    return card;
+  }
+
+  function faceFor(v) {
+    var best = FACES[0];
+    FACES.forEach(function (f) { if (Math.abs(f.v - v) < Math.abs(best.v - v)) best = f; });
+    return best;
+  }
+
+  function feelChart(area) {
+    var id = feelMetric(area).id, days = lastDays(30);
+    var W = 320, H = 118, x0 = 24, x1 = 316, top = 8, base = 96;
+    var slot = (x1 - x0) / days.length, bw = Math.min(8, slot - 2);
+    var y = function (v) { return base - (v / 10) * (base - top); };
+    var out = '<svg class="feelchart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="How ' + esc(shortName(area.name)) + ' has felt, last 30 days">';
+    FACES.forEach(function (f) {
+      out += '<line x1="' + x0 + '" x2="' + x1 + '" y1="' + y(f.v) + '" y2="' + y(f.v) + '" stroke="var(--line)" stroke-width="1"/>' +
+        '<text x="0" y="' + (y(f.v) + 4) + '" font-size="11">' + f.e + '</text>';
+    });
+    var rated = 0;
+    days.forEach(function (d, i) {
+      var v = (S.metrics[d] || {})[id], cx = x0 + slot * i + slot / 2;
+      var tip = d + ': ' + (typeof v === 'number' ? faceFor(v).e + ' ' + faceFor(v).t : 'not checked in');
+      out += '<g><title>' + tip + '</title><rect x="' + (cx - slot / 2) + '" y="' + top + '" width="' + slot + '" height="' + (base - top) + '" fill="transparent"/>';
+      if (typeof v === 'number') {
+        rated++;
+        var yt = y(v), r = Math.min(3, bw / 2), xl = cx - bw / 2;
+        out += '<path d="M' + xl + ' ' + base + ' V' + (yt + r) + ' Q' + xl + ' ' + yt + ' ' + (xl + r) + ' ' + yt +
+          ' H' + (xl + bw - r) + ' Q' + (xl + bw) + ' ' + yt + ' ' + (xl + bw) + ' ' + (yt + r) + ' V' + base + ' Z" fill="' + esc(area.color) + '"/>';
+      } else {
+        out += '<circle cx="' + cx + '" cy="' + base + '" r="1.5" fill="var(--ink-3)" opacity=".5"/>';
+      }
+      out += '</g>';
+    });
+    out += '<line x1="' + x0 + '" x2="' + x1 + '" y1="' + base + '" y2="' + base + '" stroke="var(--line)"/>' +
+      '<text x="' + x0 + '" y="' + (H - 4) + '" class="trail-txt">' + days[0].slice(5) + '</text>' +
+      '<text x="' + x1 + '" y="' + (H - 4) + '" text-anchor="end" class="trail-txt">today</text></svg>';
+    if (!rated) out = '<div>' + out + '<p class="muted" style="margin:6px 0 0">Tap a face on Today and the bars start filling in.</p></div>';
+    return out;
   }
 
   /* The daily check-in for one area: how it felt, the move you made, what the
@@ -1364,19 +1657,21 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
 
     var hero = el(
       '<div class="card"><div class="hero">' +
-      ring(overall, 108, 12, 'var(--accent)') +
+      healthFlower() +
       '<div class="hero-stats">' +
       '<div class="big">Moving toward health</div>' +
-      '<div class="label">' + movesWeek + ' move' + (movesWeek === 1 ? '' : 's') + ' this week · ' + reached + ' of ' + total +
-      ' milestones reached · the ring is this week’s momentum</div>' +
+      '<div class="label">' + reached + ' of ' + total + ' milestones reached · ' + movesWeek + ' move' +
+      (movesWeek === 1 ? '' : 's') + ' this week</div>' +
       '<div class="pillrow">' +
       '<span class="pill gold">◎ ' + coinsToday() + ' earned today</span>' +
       '<span class="pill' + (streak() > 0 ? ' good' : '') + '">' + streak() + '-day streak</span>' +
-      '</div></div></div></div>'
+      '</div></div></div>' +
+      '<p class="flower-key">Each petal is an area. It grows as you reach the milestones on its path; the outline is what healthy looks like.</p></div>'
     );
 
     if (S.areas.length) {
-      var summary = el('<div class="summary"></div>');
+      hero.appendChild(el('<div class="kicker" style="margin-top:14px">This week’s momentum</div>'));
+      var summary = el('<div class="summary" style="margin-top:6px;border-top:0;padding-top:0"></div>');
       S.areas.forEach(function (area) {
         var b = el('<button class="sum" type="button" title="Open the ' + esc(shortName(area.name)) + ' profile">' +
           ring(areaScore(area, days), 52, 6, esc(area.color)) +
@@ -1387,6 +1682,7 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
       hero.appendChild(summary);
     }
     root.appendChild(hero);
+    root.appendChild(progressCard());
 
     if (!S.areas.length) {
       root.appendChild(el('<div class="card"><p class="empty">No profiles yet. Add one below.</p></div>'));
@@ -1480,6 +1776,21 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
       area.milestones.length + ' milestones reached</p>' +
       '</div></div></div>'
     ));
+
+    /* --- where it is heading --- */
+    var vc = el('<div class="card"><div class="card-head"><div><h2>What healthy looks like</h2>' +
+      '<p class="sub">The destination, and where you are on the way.</p></div></div></div>');
+    vc.appendChild(el(trailGraphic(area)));
+    vc.appendChild(el(area.vision
+      ? '<p class="vision">' + esc(area.vision).replace(/\n/g, '<br>') + '</p>'
+      : '<p class="muted">Describe it in Set up this profile — what a good day looks like once this is healthy.</p>'));
+    root.appendChild(vc);
+
+    /* --- how it has felt --- */
+    var fcard = el('<div class="card"><div class="card-head"><div><h2>How it’s felt</h2>' +
+      '<p class="sub">Your daily faces, last 30 days. Hover or tap a day for its value.</p></div></div></div>');
+    fcard.appendChild(el(feelChart(area)));
+    root.appendChild(fcard);
 
     /* --- the path --- */
     var pc = el('<div class="card"><div class="card-head"><div><h2>The path</h2>' +
@@ -1629,6 +1940,7 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
       L.push('');
       L.push('=== ' + area.name + ' ===');
       if (area.goal) L.push('Goal: ' + area.goal);
+      if (area.vision) L.push('What healthy looks like: ' + area.vision.replace(/\s+/g, ' '));
       if (area.note) L.push(area.note);
       if (area.history) { L.push(''); L.push(area.history); }
       if (area.milestones.length) {
@@ -1818,6 +2130,12 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
     goal.querySelector('input').addEventListener('change', function (e) { area.goal = e.target.value; save(); render(); });
     body.appendChild(goal);
 
+    var vis = el('<label class="field"><span>What healthy looks like</span>' +
+      '<textarea rows="3" placeholder="e.g. walking all day in normal shoes, calm calves, playing sport again"></textarea></label>');
+    vis.querySelector('textarea').value = area.vision || '';
+    vis.querySelector('textarea').addEventListener('change', function (e) { area.vision = e.target.value; save(); render(); });
+    body.appendChild(vis);
+
     var note = el('<label class="field"><span>One-line note, shown under the title</span>' +
       '<input type="text" class="a-note" value="' + esc(area.note || '') + '" placeholder="what is going on here"></label>');
     note.querySelector('input').addEventListener('change', function (e) { area.note = e.target.value; save(); render(); });
@@ -1958,6 +2276,49 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
     return card;
   }
 
+  /* ------------------------------------------------------------ install */
+  /* Served from the website, the page can be installed as an app: Chrome and
+     Edge offer a prompt, Safari has File › Add to Dock (Mac) or Share › Add to
+     Home Screen (iPhone). The artifact copy has no manifest and skips all this. */
+
+  var installPrompt = null;
+  var installable = !!document.querySelector('link[rel="manifest"]');
+  var standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+  if (installable && 'serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch(function () { /* still works online */ });
+  }
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    installPrompt = e;
+    renderInstall();
+  });
+  window.addEventListener('appinstalled', function () { installPrompt = null; standalone = true; renderInstall(); });
+
+  function renderInstall() {
+    var slot = document.getElementById('installSlot');
+    if (!slot) return;
+    slot.innerHTML = '';
+    if (!installPrompt || standalone) return;
+    var b = el('<button class="btn primary install-btn" type="button">Install app</button>');
+    b.addEventListener('click', function () {
+      installPrompt.prompt();
+      installPrompt.userChoice.then(function () { installPrompt = null; renderInstall(); });
+    });
+    slot.appendChild(b);
+  }
+
+  function installHelp() {
+    if (!installable || standalone) return null;
+    return el('<div><h3 class="section">Get the app</h3>' +
+      '<p class="muted" style="margin:-4px 0 0;line-height:1.7">' +
+      '<b>Mac, Chrome or Edge:</b> the Install button at the top, or the install icon at the right of the address bar.<br>' +
+      '<b>Mac, Safari:</b> File › Add to Dock.<br>' +
+      '<b>iPhone:</b> Safari’s Share button › Add to Home Screen.<br>' +
+      '<b>Android:</b> Chrome’s menu › Install app.<br>' +
+      'It opens in its own window and works offline. Your data stays on each device; use Export and Import to move it.</p></div>');
+  }
+
   /* ----------------------------------------------------------- app and data */
 
   function appCard() {
@@ -1984,6 +2345,9 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
 
     body.appendChild(el('<h3 class="section">Everything, as one summary</h3>'));
     body.appendChild(summaryCard(null));
+
+    var help = installHelp();
+    if (help) body.appendChild(help);
 
     body.appendChild(el('<h3 class="section">Your data</h3>'));
     var data = el('<div><p class="muted" style="margin:0 0 10px">Export a copy before you clear site data or switch phones.</p>' +
@@ -2033,7 +2397,7 @@ details.more > .flags { border-top: 0; padding-top: 0; margin-top: 8px; }
   var cloudDoc = null, cloudTimer = null, syncState = 'local';
 
   var SYNC_TEXT = {
-    local: 'Everything stays in this browser. Export a backup from the Areas tab.',
+    local: 'Everything stays in this browser. Export a backup from the bottom of Today.',
     linking: 'Connecting to your account…',
     synced: 'Synced to your account — your check-ins follow you between devices.',
     toobig: 'This browser holds your full history; it has outgrown account sync. Export a backup.',
