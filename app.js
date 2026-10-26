@@ -244,6 +244,73 @@
           knee.history = knee.history ? knee.history + '\n\n' + lines : lines;
         }
       }
+    },
+    {
+      // every area becomes a path toward something, and strength joins them,
+      // tied to the leg so one lower-body session moves both
+      id: 'journeys-and-strength',
+      apply: function (st) {
+        var paths = {
+          ear: ['Toward a calm ear', [
+            'Hearing exam: audiogram, tympanometry + acoustic reflex',
+            'Custom high-fidelity earplugs fitted',
+            'Earplugs with me every time I go somewhere loud',
+            'Two calm weeks in a row'
+          ]],
+          knee: ['Toward pain-free walking, and back to sport', [
+            'Squatting twice a week, every week',
+            'Whole-leg assessment with a sports-med doctor or PT',
+            'Calf raises even on both legs',
+            'A 20k-step day with no calf or foot pain',
+            'Back playing a sport'
+          ]],
+          shoulder: ['Toward a loose, easy shoulder', [
+            'Know what loosens it (a few weeks of notes)',
+            'Mobility routine 5× a week for a month',
+            'A week without tightness'
+          ]],
+          teeth: ['Toward a healthy, comfortable mouth', [
+            'Dental check-up booked',
+            'Flossing every day for a month',
+            'Night guard sorted'
+          ]]
+        };
+        Object.keys(paths).forEach(function (id) {
+          var a = areaById(st, id);
+          if (!a) return;
+          if (!a.goal) a.goal = paths[id][0];
+          if (!a.milestones || !a.milestones.length) {
+            a.milestones = paths[id][1].map(function (label, i) { return { id: id + '-m' + i, label: label, done: false }; });
+          }
+        });
+
+        var knee = areaById(st, 'knee');
+        if (knee) addAction(knee, { id: 'knee8', label: 'Bent-knee calf raises (soleus)', coins: 3, target: 2 }, 1);
+
+        if (!areaById(st, 'strength')) {
+          var at = knee ? st.areas.indexOf(knee) + 1 : st.areas.length;
+          st.areas.splice(at, 0, {
+            id: 'strength', name: 'Strength', emoji: '💪', color: '#f0a04b',
+            note: 'The base everything else stands on.',
+            goal: 'Toward a strong, resilient body',
+            history: '',
+            metrics: [],
+            flags: [],
+            milestones: [
+              { id: 'strength-m0', label: 'Lifting twice a week for 4 weeks straight', done: false },
+              { id: 'strength-m1', label: 'Squat 135 lb for 3×8 with no leg flare the next day', done: false },
+              { id: 'strength-m2', label: 'Lifting 3× a week for 8 weeks', done: false },
+              { id: 'strength-m3', label: 'Squat bodyweight for 5', done: false }
+            ],
+            actions: [
+              { id: 'st1', label: 'Lower-body session (counts as squats for the leg)', coins: 5, target: 2, links: ['knee5'] },
+              { id: 'st2', label: 'Upper-body session', coins: 5, target: 2 },
+              { id: 'st3', label: 'Enough protein today', coins: 1, target: 5 },
+              { id: 'st4', label: '7+ hours of sleep', coins: 2, target: 5 }
+            ]
+          });
+        }
+      }
     }
   ];
 
@@ -277,6 +344,8 @@
       delete a.metric;
       if (!a.flags) a.flags = [];
       if (typeof a.history !== 'string') a.history = '';
+      if (typeof a.goal !== 'string') a.goal = '';
+      if (!a.milestones) a.milestones = [];
     });
 
     UPGRADES.forEach(function (u) {
@@ -405,20 +474,22 @@
     return expected ? Math.min(1.2, earned / expected) : 0;
   }
 
-  function coinsEarned() {
-    var total = 0;
-    Object.keys(S.log).forEach(function (day) {
-      Object.keys(S.log[day]).forEach(function (aid) {
-        if (S.log[day][aid]) total += coinsFor(aid);
-      });
+  // one workout that counts in two areas still earns its coins once
+  function coinsOnDay(day) {
+    var done = S.log[day] || {}, sum = 0;
+    var echoed = {};
+    allActions().forEach(function (p) {
+      if (done[p.action.id]) (p.action.links || []).forEach(function (id) { echoed[id] = true; });
     });
-    return total;
-  }
-  function coinsToday() {
-    var t = today(), sum = 0;
-    Object.keys(S.log[t] || {}).forEach(function (aid) { if (S.log[t][aid]) sum += coinsFor(aid); });
+    Object.keys(done).forEach(function (aid) { if (done[aid] && !echoed[aid]) sum += coinsFor(aid); });
     return sum;
   }
+  function coinsEarned() {
+    var total = 0;
+    Object.keys(S.log).forEach(function (day) { total += coinsOnDay(day); });
+    return total;
+  }
+  function coinsToday() { return coinsOnDay(today()); }
   function balance() { return Math.max(0, coinsEarned() - (S.spent || 0)); }
 
   function streak() {
@@ -475,7 +546,7 @@
       var exposures = area.flags.filter(function (f) { return f.kind === 'exposure'; });
       var guards = area.flags.filter(function (f) { return f.kind === 'protection'; });
 
-      area.metrics.forEach(function (m) {
+      areaMetrics(area).forEach(function (m) {
         if (!m.label) return;
         exposures.forEach(function (f) {
           out.push({
@@ -601,33 +672,173 @@
 
   /* ------------------------------------------------------------ shared pieces */
 
-  /* The daily check-in for one area: what you did, what the day was like, how it
-     felt. Used on Today and again on the area's own profile. */
-  function logBlock(area, opts) {
-    var t = today(), days = week();
-    var wrap = el('<div></div>');
+  /* --------------------------------------------------------------- journeys */
 
-    var list = el('<ul class="actions"></ul>');
-    area.actions.forEach(function (act) {
-      var done = isDone(t, act.id);
-      var li = el('<li></li>');
-      var btn = el(
-        '<button class="act' + (done ? ' done' : '') + '" type="button">' +
-        '<span class="box">✓</span>' +
-        '<span class="act-label">' + esc(act.label) + '</span>' +
-        '<span class="act-meta">' + hits(act.id, days) + '/' + act.target + ' wk · <b>◎' + act.coins + '</b></span>' +
-        '</button>'
-      );
-      btn.addEventListener('click', function () { toggle(t, act.id); });
-      li.appendChild(btn);
+  /* Each area is a path toward something, not a checklist. The day asks two
+     things per area: how did it feel, and did you make a move toward it. */
+
+  var FACES = [
+    { v: 1, e: '😣', t: 'rough' },
+    { v: 4, e: '😐', t: 'meh' },
+    { v: 7, e: '🙂', t: 'good' },
+    { v: 10, e: '😌', t: 'great' }
+  ];
+
+  // the faces are stored as a 0–10 rating like any other, so findings, trends
+  // and the appointment summary pick them up without a second code path
+  function feelMetric(area) {
+    return { id: 'feel:' + area.id, label: 'How it felt overall', low: 'rough', high: 'great', lowerIsBetter: false };
+  }
+  function areaMetrics(area) {
+    return [feelMetric(area)].concat(area.metrics.filter(function (m) { return m.label; }));
+  }
+
+  function nextMilestone(area) {
+    return area.milestones.filter(function (m) { return !m.done; })[0] || null;
+  }
+  function reachedCount(area) {
+    return area.milestones.filter(function (m) { return m.done; }).length;
+  }
+
+  // the move suggested for today: whichever is furthest behind its weekly aim
+  var moveOffset = {};
+  function moveCandidates(area) {
+    var t = today(), days = week();
+    return area.actions.filter(function (a) { return !isDone(t, a.id); })
+      .map(function (a) {
+        var target = Math.max(1, a.target || 1);
+        return { act: a, gap: Math.max(0, target - hits(a.id, days)) / target };
+      })
+      .sort(function (x, y) { return (y.gap - x.gap) || ((y.act.coins || 0) - (x.act.coins || 0)); })
+      .map(function (x) { return x.act; });
+  }
+  function movesMadeToday(area) {
+    var t = today();
+    return area.actions.filter(function (a) { return isDone(t, a.id); });
+  }
+
+  function milestoneDots(area) {
+    if (!area.milestones.length) return '';
+    var next = nextMilestone(area);
+    return '<div class="pathline"><span class="dots">' + area.milestones.map(function (m) {
+      return '<i' + (m.done ? ' style="background:' + esc(area.color) + '"' : '') + '></i>';
+    }).join('') + '</span><span>' + reachedCount(area) + ' of ' + area.milestones.length +
+      (next ? ' · next: ' + esc(next.label) : ' · every milestone reached') + '</span></div>';
+  }
+
+  function pathBlock(area) {
+    var wrap = el('<div></div>');
+    var list = el('<ol class="path"></ol>');
+    var next = nextMilestone(area);
+    area.milestones.forEach(function (m) {
+      var li = el('<li class="' + (m.done ? 'reached' : '') + (m === next ? ' is-next' : '') + '" style="--c:' + esc(area.color) + '">' +
+        '<button type="button"><span class="node"></span>' +
+        '<span class="ms-label">' + esc(m.label) + '</span>' +
+        '<span class="when">' + (m.done ? 'reached' + (m.doneAt ? ' ' + esc(m.doneAt) : '') : (m === next ? 'next on the path · tap when reached' : '')) + '</span>' +
+        '</button></li>');
+      li.querySelector('button').addEventListener('click', function () {
+        m.done = !m.done;
+        if (m.done) m.doneAt = today(); else delete m.doneAt;
+        save(); render();
+      });
       list.appendChild(li);
     });
-    if (!area.actions.length && !opts.quiet) {
-      list.appendChild(el('<li><p class="empty">No habits here yet — add one in Setup.</p></li>'));
+    if (area.milestones.length) wrap.appendChild(list);
+    else wrap.appendChild(el('<p class="empty">No milestones yet. Add the first step below.</p>'));
+
+    var add = el('<div class="row" style="margin-top:6px"><input type="text" class="grow" placeholder="add a milestone…"><button class="btn">Add</button></div>');
+    add.querySelector('button').addEventListener('click', function () {
+      var v = add.querySelector('input').value.trim();
+      if (!v) return;
+      area.milestones.push({ id: uid(), label: v, done: false });
+      save(); render();
+    });
+    wrap.appendChild(add);
+    return wrap;
+  }
+
+  function feelRow(area) {
+    var t = today(), id = feelMetric(area).id;
+    var wrap = el('<div class="feel"><div class="kicker">How is it today?</div><div class="faces"></div></div>');
+    var row = wrap.querySelector('.faces');
+    FACES.forEach(function (f) {
+      var on = (S.metrics[t] || {})[id] === f.v;
+      var b = el('<button type="button" class="face' + (on ? ' on' : '') + '"' + (on ? ' style="border-color:' + esc(area.color) + '"' : '') +
+        ' aria-label="' + f.t + '">' + f.e + '<small>' + f.t + '</small></button>');
+      b.addEventListener('click', function () {
+        if (!S.metrics[t]) S.metrics[t] = {};
+        if (S.metrics[t][id] === f.v) delete S.metrics[t][id];
+        else S.metrics[t][id] = f.v;
+        save(); render();
+      });
+      row.appendChild(b);
+    });
+    var cur = (S.metrics[t] || {})[id];
+    var n = typeof cur === 'number' ? standoutNote(feelMetric(area), cur) : null;
+    if (n) wrap.appendChild(el('<div class="metric-note ' + n.cls + '">' + esc(n.text) + '</div>'));
+    return wrap;
+  }
+
+  function moveBlock(area) {
+    var t = today();
+    var wrap = el('<div></div>');
+    if (!area.actions.length) return wrap;
+
+    var made = movesMadeToday(area);
+    var cands = moveCandidates(area);
+
+    if (made.length) {
+      var doneBox = el('<div class="move made" style="border-color:' + esc(area.color) + '">' +
+        '<div class="grow"><div class="kicker">Moved forward today</div><div class="made-list"></div></div></div>');
+      made.forEach(function (a) {
+        var chip = el('<button type="button" class="flag on" style="border-color:' + esc(area.color) + '" title="tap to undo">' + esc(a.label) + '</button>');
+        chip.addEventListener('click', function () { toggle(t, a.id); });
+        doneBox.querySelector('.made-list').appendChild(chip);
+      });
+      wrap.appendChild(doneBox);
     }
-    wrap.appendChild(list);
+
+    if (cands.length) {
+      var i = (moveOffset[area.id] || 0) % cands.length;
+      var pick = cands[i];
+      var box = el('<div class="move">' +
+        '<div class="grow"><div class="kicker">' + (made.length ? 'Another move, if you have it in you' : 'Today’s move') + '</div>' +
+        '<div class="what">' + esc(pick.label) + '</div>' +
+        '<div class="why">' + hits(pick.id, week()) + ' of ' + pick.target + ' this week · ◎' + pick.coins + '</div></div>' +
+        '<button type="button" class="btn primary mv-do" style="background:' + esc(area.color) + ';border-color:' + esc(area.color) + '">Did it</button></div>');
+      box.querySelector('.mv-do').addEventListener('click', function () { moveOffset[area.id] = 0; toggle(t, pick.id); });
+      wrap.appendChild(box);
+
+      if (cands.length > 1) {
+        var more = el('<details class="more"><summary>Other moves</summary><div class="flags"></div></details>');
+        cands.forEach(function (a, j) {
+          if (j === i) return;
+          var chip = el('<button type="button" class="flag">' + esc(a.label) + '</button>');
+          chip.addEventListener('click', function () { toggle(t, a.id); });
+          more.querySelector('.flags').appendChild(chip);
+        });
+        wrap.appendChild(more);
+      }
+    }
+    return wrap;
+  }
+
+  /* The daily check-in for one area: how it felt, the move you made, what the
+     day was like. Used on Today and again on the area's own profile. */
+  function logBlock(area, opts) {
+    var t = today();
+    var wrap = el('<div></div>');
+    wrap.appendChild(feelRow(area));
+    wrap.appendChild(moveBlock(area));
+
+    var extra = wrap;
+    if (opts.compact && (area.flags.length || area.metrics.length)) {
+      extra = el('<details class="more"><summary>Tag the day · rate in detail</summary></details>');
+      wrap.appendChild(extra);
+    }
 
     if (area.flags.length) {
+      if (!opts.compact) extra.appendChild(el('<div class="kicker" style="margin-top:14px">What was today like?</div>'));
       var chips = el('<div class="flags"></div>');
       area.flags.forEach(function (flag) {
         var on = flagOn(t, flag.id);
@@ -640,7 +851,7 @@
         });
         chips.appendChild(chip);
       });
-      wrap.appendChild(chips);
+      extra.appendChild(chips);
     }
 
     area.metrics.forEach(function (metric) {
@@ -670,7 +881,7 @@
         refreshNote();
         save();
       });
-      wrap.appendChild(m);
+      extra.appendChild(m);
     });
 
     return wrap;
@@ -678,10 +889,24 @@
 
   function toggle(dayKey, actionId) {
     if (!S.log[dayKey]) S.log[dayKey] = {};
-    if (S.log[dayKey][actionId]) delete S.log[dayKey][actionId];
-    else S.log[dayKey][actionId] = true;
+    var on = !S.log[dayKey][actionId];
+    linkedIds(actionId).concat([actionId]).forEach(function (id) {
+      if (on) S.log[dayKey][id] = true; else delete S.log[dayKey][id];
+    });
     save();
     render();
+  }
+
+  /* A move can count in more than one area — a lower-body session is strength
+     work and leg rehab at once. Links run both ways, one step deep. */
+  function linkedIds(actionId) {
+    var out = [];
+    allActions().forEach(function (p) {
+      var links = p.action.links || [];
+      if (p.action.id === actionId) out = out.concat(links);
+      else if (links.indexOf(actionId) >= 0) out.push(p.action.id);
+    });
+    return out.filter(function (id, i) { return id !== actionId && out.indexOf(id) === i; });
   }
 
   function dayNoteCard() {
@@ -702,12 +927,17 @@
   function renderToday(root) {
     var days = week(), overall = overallScore(days);
 
+    var movesWeek = 0, reached = 0, total = 0;
+    days.forEach(function (d) { movesWeek += Object.keys(S.log[d] || {}).filter(function (k) { return S.log[d][k]; }).length; });
+    S.areas.forEach(function (a) { reached += reachedCount(a); total += a.milestones.length; });
+
     var hero = el(
       '<div class="card"><div class="hero">' +
       ring(overall, 108, 12, 'var(--accent)') +
       '<div class="hero-stats">' +
-      '<div class="big">' + pct(overall) + '% overall</div>' +
-      '<div class="label">rolling 7-day consistency across ' + S.areas.length + ' area' + (S.areas.length === 1 ? '' : 's') + '</div>' +
+      '<div class="big">Moving toward health</div>' +
+      '<div class="label">' + movesWeek + ' move' + (movesWeek === 1 ? '' : 's') + ' this week · ' + reached + ' of ' + total +
+      ' milestones reached · the ring is this week’s momentum</div>' +
       '<div class="pillrow">' +
       '<span class="pill gold">◎ ' + coinsToday() + ' earned today</span>' +
       '<span class="pill' + (streak() > 0 ? ' good' : '') + '">' + streak() + '-day streak</span>' +
@@ -735,11 +965,13 @@
       var card = el('<div class="card area" style="border-left-color:' + esc(area.color) + '"></div>');
       var head = el('<button class="area-link" type="button">' +
         '<span class="emoji">' + esc(area.emoji) + '</span>' +
-        '<span class="grow">' + esc(area.name) + '</span>' +
-        '<span class="muted">profile ›</span></button>');
+        '<span class="grow"><span class="name">' + esc(area.name) + '</span>' +
+        (area.goal ? '<span class="desc">' + esc(area.goal) + '</span>' : '') + '</span>' +
+        '<span class="muted">path ›</span></button>');
       head.addEventListener('click', function () { go('area:' + area.id); });
       card.appendChild(head);
-      card.appendChild(logBlock(area, {}));
+      if (area.milestones.length) card.appendChild(el(milestoneDots(area)));
+      card.appendChild(logBlock(area, { compact: true }));
       root.appendChild(card);
     });
 
@@ -753,7 +985,7 @@
   function findings(area) {
     var out = [], days = week(), prev = prevWeek(), t = today();
 
-    area.metrics.forEach(function (m) {
+    areaMetrics(area).forEach(function (m) {
       if (!m.label) return;
       var now = (S.metrics[t] || {})[m.id];
       if (typeof now === 'number') {
@@ -784,11 +1016,14 @@
       });
     });
 
+    var nm = nextMilestone(area);
+    if (nm) out.push({ text: 'Next on the path: ' + nm.label + '.', tone: 'flat' });
+
     var now = areaScore(area, days), before = areaScore(area, prev);
     if (area.actions.length) {
       var d = pct(now) - pct(before);
       out.push({
-        text: 'You are holding ' + pct(now) + '% of this profile’s habits' +
+        text: 'You are at ' + pct(now) + '% of this profile’s weekly moves' +
           (Math.abs(d) < 3 ? ', about the same as last week.' : (d > 0 ? ', up ' + d + ' points on last week.' : ', down ' + Math.abs(d) + ' points on last week.')),
         tone: Math.abs(d) < 3 ? 'flat' : (d > 0 ? 'good' : 'bad')
       });
@@ -808,10 +1043,25 @@
       '<div class="card area prof-head" style="border-left-color:' + esc(area.color) + '">' +
       '<div class="area-top">' + ring(areaScore(area, days), 72, 9, esc(area.color)) +
       '<div class="grow"><h2><span class="emoji">' + esc(area.emoji) + '</span> ' + esc(area.name) + '</h2>' +
+      (area.goal ? '<p class="goal">' + esc(area.goal) + '</p>' : '') +
       (area.note ? '<p class="sub">' + esc(area.note) + '</p>' : '') +
-      '<p class="sub">' + pct(areaScore(area, days)) + '% consistency over the last 7 days</p>' +
+      '<p class="sub">' + pct(areaScore(area, days)) + '% momentum this week · ' + reachedCount(area) + ' of ' +
+      area.milestones.length + ' milestones reached</p>' +
       '</div></div></div>'
     ));
+
+    /* --- the path --- */
+    var pc = el('<div class="card"><div class="card-head"><div><h2>The path</h2>' +
+      '<p class="sub">Milestones on the way' + (area.goal ? ' — ' + esc(area.goal.charAt(0).toLowerCase() + area.goal.slice(1)) : '') +
+      '. Tap one when you reach it.</p></div></div></div>');
+    pc.appendChild(pathBlock(area));
+    root.appendChild(pc);
+
+    /* --- today --- */
+    var lc = el('<div class="card"><div class="card-head"><div><h2>Today</h2>' +
+      '<p class="sub">How it feels, the move you made, and what the day was like.</p></div></div></div>');
+    lc.appendChild(logBlock(area, {}));
+    root.appendChild(lc);
 
     /* --- findings --- */
     var f = findings(area);
@@ -836,14 +1086,9 @@
     hta.addEventListener('change', function () { area.history = hta.value; save(); });
     root.appendChild(hc);
 
-    /* --- log --- */
-    var lc = el('<div class="card"><div class="card-head"><div><h2>Today</h2>' +
-      '<p class="sub">Check off what you did, tag what the day was like, rate how it feels.</p></div></div></div>');
-    lc.appendChild(logBlock(area, { quiet: false }));
-    root.appendChild(lc);
 
     /* --- trends --- */
-    var rated = area.metrics.filter(function (m) { return m.label; });
+    var rated = areaMetrics(area);
     var d14 = lastDays(14);
     var tc = el('<div class="card"><div class="card-head"><div><h2>Over time</h2>' +
       '<p class="sub">Last 14 days.</p></div></div></div>');
@@ -856,7 +1101,7 @@
       bars.appendChild(col);
       xs.appendChild(el('<span>' + weekdayShort(k) + '</span>'));
     });
-    tc.appendChild(el('<h3 class="section" style="margin-top:0">Habits kept</h3>'));
+    tc.appendChild(el('<h3 class="section" style="margin-top:0">Moves made</h3>'));
     tc.appendChild(bars); tc.appendChild(xs);
 
     if (rated.length) {
@@ -952,10 +1197,18 @@
     S.areas.filter(function (a) { return !only || a.id === only.id; }).forEach(function (area) {
       L.push('');
       L.push('=== ' + area.name + ' ===');
+      if (area.goal) L.push('Goal: ' + area.goal);
       if (area.note) L.push(area.note);
       if (area.history) { L.push(''); L.push(area.history); }
+      if (area.milestones.length) {
+        L.push('');
+        L.push('Milestones');
+        area.milestones.forEach(function (m) {
+          L.push('  ' + (m.done ? '[reached' + (m.doneAt ? ' ' + m.doneAt : '') + '] ' : '[ ] ') + m.label);
+        });
+      }
 
-      var rated = area.metrics.filter(function (m) { return m.label; });
+      var rated = areaMetrics(area);
       if (rated.length) {
         L.push('');
         L.push('Daily 0–10 ratings');
@@ -1129,6 +1382,11 @@
     head.querySelector('.a-name').addEventListener('change', function (e) { area.name = e.target.value; save(); render(); });
     body.appendChild(head);
 
+    var goal = el('<label class="field"><span>Where this is heading</span>' +
+      '<input type="text" value="' + esc(area.goal || '') + '" placeholder="e.g. toward pain-free walking"></label>');
+    goal.querySelector('input').addEventListener('change', function (e) { area.goal = e.target.value; save(); render(); });
+    body.appendChild(goal);
+
     var note = el('<label class="field"><span>One-line note, shown under the title</span>' +
       '<input type="text" class="a-note" value="' + esc(area.note || '') + '" placeholder="what is going on here"></label>');
     note.querySelector('input').addEventListener('change', function (e) { area.note = e.target.value; save(); render(); });
@@ -1142,7 +1400,26 @@
     });
     body.appendChild(sw);
 
-    body.appendChild(el('<h3 class="section" style="margin-top:4px">Habits · times per week · coins</h3>'));
+    if (area.milestones.length) {
+      body.appendChild(el('<h3 class="section" style="margin-top:4px">Milestones</h3>'));
+      area.milestones.forEach(function (m, i) {
+        var row = el('<div class="row" style="margin-bottom:8px"><input type="text" class="grow" value="' + esc(m.label) + '">' +
+          (i > 0 ? '<button class="btn ghost ms-up" title="move earlier">↑</button>' : '') +
+          '<button class="btn ghost ms-del" title="remove milestone">✕</button></div>');
+        row.querySelector('input').addEventListener('change', function (e) { m.label = e.target.value; save(); });
+        var up = row.querySelector('.ms-up');
+        if (up) up.addEventListener('click', function () {
+          area.milestones.splice(i, 1); area.milestones.splice(i - 1, 0, m); save(); render();
+        });
+        row.querySelector('.ms-del').addEventListener('click', function () {
+          area.milestones = area.milestones.filter(function (x) { return x !== m; });
+          save(); render();
+        });
+        body.appendChild(row);
+      });
+    }
+
+    body.appendChild(el('<h3 class="section">Moves · times per week · coins</h3>'));
     area.actions.forEach(function (act) {
       var row = el('<div class="row" style="margin-bottom:8px">' +
         '<input type="text" class="grow x-label" value="' + esc(act.label) + '">' +
@@ -1161,7 +1438,7 @@
       body.appendChild(row);
     });
     var addAct = el('<div class="row" style="margin-top:10px">' +
-      '<input type="text" class="grow n-label" placeholder="add a habit…"><button class="btn">Add</button></div>');
+      '<input type="text" class="grow n-label" placeholder="add a move…"><button class="btn">Add</button></div>');
     addAct.querySelector('button').addEventListener('click', function () {
       var v = addAct.querySelector('.n-label').value.trim();
       if (!v) return;
@@ -1267,7 +1544,7 @@
       var a = {
         id: uid(), name: name, emoji: na.querySelector('.na-emoji').value || '🌱',
         color: PALETTE[S.areas.length % PALETTE.length], note: '', history: '',
-        metrics: [], flags: [], actions: []
+        goal: '', milestones: [], metrics: [], flags: [], actions: []
       };
       S.areas.push(a);
       save(); go('area:' + a.id);

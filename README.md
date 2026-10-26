@@ -33,21 +33,22 @@ your data on that device.
 The app is organised by **profile** — one per thing you're working on. The nav
 bar is the list of them: Today, then a chip per profile, then Coins.
 
-**A profile** is everything about one part of you, in one place:
+**A profile** is one part of you and where it's heading:
 
+- **The path** — a goal (*toward pain-free walking, and back to sport*) and the
+  milestones on the way there. Tap one when you reach it.
+- **Today** — how it feels (four faces), today's move, what the day was like,
+  and detailed 0–10 ratings when you want them.
 - **Findings** — what your own entries are saying, written as sentences and
-  updated as you log. *"Hamstring curl machine: tingling down the leg runs 6.2
-  on those days against 2.0 otherwise (5 days vs 18)."*
-- **Background & history** — injuries, surgeries, dates. The context a clinician
-  would want, kept with the data rather than in your head.
-- **Today** — check off habits, tag what the day was like, rate how it feels.
-- **Over time** — habits kept over 14 days, and a sparkline per rating with this
-  week against last.
-- **Recent notes** — your own words.
-- **Take it to an appointment** — all of the above as plain text, copyable or
-  downloadable.
-- **Set up this profile** — collapsed at the bottom: habits, ratings, tags,
-  colour, name.
+  updated as you log.
+- **Background & history** — injuries, surgeries, dates.
+- **Over time**, **Recent notes**, **Take it to an appointment**, and
+  **Set up this profile** (goal, milestones, moves, ratings, tags).
+
+**Moves** replace the old checklist. Each area suggests one move a day — the one
+furthest behind its weekly aim — with the rest a tap away. A move can count in
+two areas: a lower-body session in Strength also counts as squats for the leg,
+and earns its coins once.
 
 **Today** is the quick daily pass: the rings up top (tap one to open its
 profile), then every profile's check-ins in one scroll, then a note field.
